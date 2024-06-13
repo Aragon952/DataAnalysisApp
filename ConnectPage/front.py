@@ -1,21 +1,18 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
+import sys
+import os
+
+# Acesta adaugă directorul părinte (DataAnalysisApp) la sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from FrontPage.front import open_main_page
 
 # Funcții pentru gestionarea bazei de date
 def connect_db():
-    return sqlite3.connect('user_data.db')
+    return sqlite3.connect('DataAnalysisApp/database.db')
 
-def setup_db():
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users_information (
-                      id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      name TEXT NOT NULL UNIQUE,
-                      password TEXT NOT NULL
-                      )''')
-    conn.commit()
-    conn.close()
 
 def create_account(name, password):
     conn = connect_db()
@@ -48,6 +45,7 @@ def setup_gui():
     global root
     root = tk.Tk()
     root.title("Conectare")
+    root.geometry("250x150")
 
     username_label = ttk.Label(root, text="Nume utilizator:")
     username_label.grid(row=0, column=0, padx=10, pady=10)
@@ -67,19 +65,5 @@ def setup_gui():
 
     root.mainloop()
 
-# Funcția pentru deschiderea paginii principale
-def open_main_page(user_id):
-    main_page = tk.Tk()
-    main_page.title("Pagina Principala")
 
-    welcome_label = ttk.Label(main_page, text=f"Bine ai venit, ID-ul tău este: {user_id}")
-    welcome_label.pack(pady=20)
-
-    # Aici poți adăuga alte elemente ale interfeței principale
-    # ...
-
-    main_page.mainloop()
-
-# Setup și rulare interfață
-setup_db()
 setup_gui()
