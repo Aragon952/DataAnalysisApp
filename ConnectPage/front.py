@@ -8,7 +8,6 @@ def setup_gui():
     root = tk.Tk()
     root.title("Conectare")
 
-
     username_label = ttk.Label(root, text="Nume utilizator:")
     username_label.grid(row=0, column=0, padx=10, pady=10)
     username_entry = ttk.Entry(root)

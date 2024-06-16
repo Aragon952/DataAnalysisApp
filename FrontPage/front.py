@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, Menu
-from FrontPage.functions import select_item
+from FrontPage.functions import select_item, fetch_datasets
 from AddDataPage.front import open_add_data_page
 
 
@@ -29,19 +29,14 @@ def open_main_page(user_id):
     frame = ttk.Frame(root, padding="10")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    # Listbox pentru seturi de date
     label = ttk.Label(frame, text="Seturi de date anterioare")
     label.pack()
 
     listbox = tk.Listbox(frame, height=10, width=50, activestyle='dotbox')
     listbox.pack(padx=10, pady=10)
 
-    # Adaugarea unor elemente in listbox
-    data_sets = ["Analiza Consumului de Energie Regenerabilă în Europa (1990-2024)",
-                "Performanta Scolara pe Districte Educationale",
-                "Incidența Bolilor Cardiovasculare, 2005-2024",
-                "Rata Criminalitatii in Principalele Metropole Globale",
-                "Efectele Schimbarilor Climatice asupra Biodiversitatii in Arii Protejate"]
+    # Încărcarea datelor specifice utilizatorului în Listbox
+    data_sets = fetch_datasets(user_id)
     for item in data_sets:
         listbox.insert(tk.END, item)
 
