@@ -1,16 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, Menu
-
+from FrontPage.functions import select_item
 from AddDataPage.front import open_add_data_page
-
-def select_item(event):
-    # Obține elementul selectat
-    widget = event.widget
-    index = int(widget.curselection()[0])
-    value = widget.get(index)
-    print("Ai selectat:", value)
-
-# Crearea ferestrei principale
 
 
 def open_main_page(user_id):
@@ -69,17 +60,8 @@ def open_main_page(user_id):
     btn_add = ttk.Button(buttons_frame, text="Adaugare set de date nou", command= lambda : open_add_data_page(user_id))
     btn_add.pack(fill=tk.X, padx=5, pady=2)
 
-
     btn_add = ttk.Button(buttons_frame, text="Vizualizare Rezultate salvate")
     btn_add.pack(fill=tk.X, padx=5, pady=2)
-
-    # Checkbox
-    chk_state = tk.BooleanVar()
-    chk_state.set(False) # set check state
-    chk = ttk.Checkbutton(frame, text='Utilizarea serviciilor remote de analiza', var=chk_state)
-    chk.pack()
-
-# Rularea aplicatiei
 
     root.mainloop()
 
