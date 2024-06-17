@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from functions import create_account, login
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ConnectPage.functions import create_account, login
 
 
 def setup_gui():
@@ -9,7 +12,7 @@ def setup_gui():
     root.title("Conectare")
 
     username_label = ttk.Label(root, text="Nume utilizator:")
-    username_label.grid(row=0, column=0, padx=10, pady=10)
+    username_label.grid(row=0, column=0, padx=10, pady=10)  
     username_entry = ttk.Entry(root)
     username_entry.grid(row=0, column=1, padx=10, pady=10)
 

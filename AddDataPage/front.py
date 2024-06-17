@@ -1,45 +1,77 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter import filedialog
 import pandas as pd
 import numpy as np
-from PrepareDataPage.front import open_prepare_data_page
+import sqlite3
+from PrepareDataPage.front import open_prepare_data_page  # Ensure this import is correctly pointing to your module
 
 def open_add_data_page(user_id):
     add_data_window = tk.Toplevel()
     add_data_window.title("Adaugare date")
     add_data_window.geometry("800x600")
 
-    # Crearea DataFrame-ului
-    dataframe = pd.DataFrame(np.random.randint(1, 100, size=(5, 5)), columns=['Col1', 'Col2', 'Col3', 'Col4', 'Col5'])
-
-    # Crearea unui frame pentru TreeView și Scrollbars
+    # Create a frame for TreeView and Scrollbars
     frame = ttk.Frame(add_data_window, padding="3 3 12 12")
-    frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+    frame.pack(fill=tk.BOTH, expand=True)
 
-    # Specificarea coloanelor cu identificatori clari și utilizarea acestora
-    tree = ttk.Treeview(frame, columns=dataframe.columns.tolist(), show="headings")
-    for col in dataframe.columns:
-        tree.heading(col, text=col)  # Asigură-te că identificatorii sunt corect utilizați aici
-        tree.column(col, width=100)
+    # TreeView setup
+    tree = ttk.Treeview(frame, show="headings")
+    tree.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
 
-    # Încărcarea datelor în Treeview
-    for index, row in dataframe.iterrows():
-        tree.insert("", tk.END, values=row.tolist())
+    # Vertical Scrollbar
+    vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    vsb.pack(side=tk.RIGHT, fill=tk.Y)
+    tree.configure(yscrollcommand=vsb.set)
 
-    tree.pack(expand=True, fill=tk.BOTH)
+    # Horizontal Scrollbar
+    hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+    hsb.pack(side=tk.BOTTOM, fill=tk.X)
+    tree.configure(xscrollcommand=hsb.set)
 
-    # Adăugarea Scrollbar-ului vertical
-    scrollbar = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    tree.configure(yscrollcommand=scrollbar.set)
+    # Initialize an empty DataFrame
+    dataframe = pd.DataFrame()
 
-    # Butonul de adăugare date și preprocesare
-    add_button = ttk.Button(add_data_window, text="Adaugare set de date")
-    add_button.grid(row=1, column=0, padx=10, pady=10, sticky='ew')
+    def update_treeview(dataframe):
+        tree["columns"] = dataframe.columns.tolist()
+        for col in dataframe.columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)
+        # Clear existing rows before adding new
+        tree.delete(*tree.get_children())
+        for index, row in dataframe.iterrows():
+            tree.insert("", tk.END, values=row.tolist())
 
-    # Buton pentru a deschide fereastra de preprocesare
+    def load_csv():
+        filepath = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
+        if filepath:
+            nonlocal dataframe
+            dataframe = pd.read_csv(filepath)
+            update_treeview(dataframe)
+            filename = filepath.split('/')[-1]
+            save_file_info_to_database(user_id, filename, filepath)
+
+    # Button to add data and preprocess
+    add_button = ttk.Button(add_data_window, text="Adaugare set de date", command=load_csv)
+    add_button.pack(pady=10, fill=tk.X)
+
+    # Button to open data preprocessing page
     prep_button = ttk.Button(add_data_window, text="Preprocesare Date", command=lambda: open_prepare_data_page(user_id, dataframe))
-    prep_button.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
-    
+    prep_button.pack(pady=10, fill=tk.X)
 
     add_data_window.mainloop()
+
+def save_file_info_to_database(user_id, filename, filepath):
+    # Connect to SQLite database
+    conn = sqlite3.connect('DataAnalysisApp/database.db')  # Ensure this path is correct
+    cur = conn.cursor()
+    
+    # Insert data about the file into the database
+    cur.execute('''
+        INSERT INTO user_history (user_id, file_history, file_name)
+        VALUES (?, ?, ?)
+    ''', (user_id, filepath, filename))
+    
+    # Commit and close
+    conn.commit()
+    conn.close()
