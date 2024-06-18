@@ -5,7 +5,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ConnectPage.functions import create_account, login
 
-
+    
 def setup_gui():
     global root
     root = tk.Tk()

@@ -1,12 +1,12 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
 from AnalyzeData.front import open_analysis_page
+from PrepareDataPage.functions import update_entry_and_methods
 
 def open_prepare_data_page(user_id, dataframe):
     prepare_window = tk.Toplevel()
     prepare_window.title("Preparare Date")
-    prepare_window.geometry("900x700")
+    prepare_window.geometry("1000x800")
 
         # Main frame to hold everything
     main_frame = ttk.Frame(prepare_window, padding="3 3 12 12")
@@ -37,44 +37,56 @@ def open_prepare_data_page(user_id, dataframe):
     for index, row in dataframe.iterrows():
         tree.insert("", tk.END, values=list(row))
 
-    # Frame for listboxes and buttons
+    # Listbox Frame for numeric and alphanumeric columns
     list_frame = ttk.Frame(main_frame)
     list_frame.pack(fill=tk.X, expand=False, side=tk.TOP, pady=10)
 
-    # Listboxes for column selection
+    # Numeric columns setup
+    ttk.Label(list_frame, text="Coloane numerice").pack(side=tk.LEFT, padx=10)
     num_listbox = tk.Listbox(list_frame, height=5)
     num_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
+    num_methods = ttk.Combobox(list_frame, values=['Normalizează', 'Standardizează'])
+    num_methods.pack(side=tk.LEFT, padx=10)
+    ttk.Button(list_frame, text="Folosește metoda pe toate numericele", command=lambda: apply_method(dataframe, num_methods.get(), 'numeric')).pack(side=tk.LEFT, padx=10)
+
+    # Alphanumeric columns setup
+    ttk.Label(list_frame, text="Coloane alfanumerice").pack(side=tk.LEFT, padx=10)
     alpha_listbox = tk.Listbox(list_frame, height=5)
     alpha_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
+    alpha_methods = ttk.Combobox(list_frame, values=['Codifică', 'Umple goluri'])
+    alpha_methods.pack(side=tk.LEFT, padx=10)
+    ttk.Button(list_frame, text="Folosește metoda pe toate alfanumericele", command=lambda: apply_method(dataframe, alpha_methods.get(), 'alpha')).pack(side=tk.LEFT, padx=10)
 
+    # Populate listboxes
     for col in dataframe.select_dtypes(include='number').columns:
         num_listbox.insert(tk.END, col)
     for col in dataframe.select_dtypes(exclude='number').columns:
         alpha_listbox.insert(tk.END, col)
 
-    # Buttons for preprocessing
-    preprocess_frame = ttk.Frame(main_frame)
-    preprocess_frame.pack(fill=tk.X, expand=False, side=tk.TOP)
+    # Entry and method selection based on column type
+    entry = ttk.Entry(main_frame)
+    entry.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
-    ttk.Button(preprocess_frame, text="Normalizează").pack(side=tk.LEFT, padx=5, pady=5)
-    ttk.Button(preprocess_frame, text="Standardizează").pack(side=tk.LEFT, padx=5, pady=5)
-
-    # Entry and Combobox for preprocessing
-    entry = ttk.Entry(preprocess_frame)
-    entry.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
-
-    methods = ['Normalizează', 'Standardizează', 'Umple goluri']
-    method_cb = ttk.Combobox(preprocess_frame, values=methods)
+    method_cb = ttk.Combobox(main_frame)
     method_cb.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
+    ttk.Button(main_frame, text="Folosește metoda pentru coloană", command=lambda: apply_method(entry.get(), method_cb.get(), dataframe)).pack(side=tk.LEFT, padx=10, pady=10)
 
-    ttk.Button(preprocess_frame, text="Aplică Metoda", command=lambda: apply_method(entry.get(), method_cb.get(), dataframe)).pack(side=tk.LEFT, padx=10, pady=10)
+    # Bind listbox selection changes
+    num_listbox.bind('<<ListboxSelect>>', lambda event: update_entry_and_methods(num_listbox, entry, method_cb, ['Normalizează', 'Standardizează']))
+    alpha_listbox.bind('<<ListboxSelect>>', lambda event: update_entry_and_methods(alpha_listbox, entry, method_cb, ['Codifică', 'Umple goluri']))
 
-    execute_button = ttk.Button(preprocess_frame, text="Analizeaza datele", command=lambda: open_analysis_page(user_id, dataframe))
-    execute_button.pack(side=tk.LEFT, padx=10, pady=10)
+     # Analyze button
+    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analysis_page(user_id, dataframe))
+    execute_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
     prepare_window.mainloop()
 
-def apply_method(column, method, dataframe):
-    print(f"Aplică metoda {method} pe coloana {column}")
-    # Add specific preprocessing logic here
 
+def apply_method(dataframe, method, col_type):
+    if col_type == 'numeric':
+        columns = dataframe.select_dtypes(include='number').columns
+    else:
+        columns = dataframe.select_dtypes(exclude='number').columns
+    
+    print(f"Applying {method} to all {col_type} columns: {', '.join(columns)}")
+    # Here, implement the actual preprocessing logic for each column
