@@ -6,7 +6,7 @@ from PrepareDataPage.functions import update_entry_and_methods
 def open_prepare_data_page(user_id, dataframe):
     prepare_window = tk.Toplevel()
     prepare_window.title("Preparare Date")
-    prepare_window.geometry("1000x800")
+    prepare_window.state("zoomed")
 
         # Main frame to hold everything
     main_frame = ttk.Frame(prepare_window, padding="3 3 12 12")
@@ -78,6 +78,10 @@ def open_prepare_data_page(user_id, dataframe):
      # Analyze button
     execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analysis_page(user_id, dataframe))
     execute_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
+
+    # Save data button
+    save_button = ttk.Button(main_frame, text="Salvează datele", command=lambda: save_csv(dataframe, user_id))
+    save_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
     prepare_window.mainloop()
 

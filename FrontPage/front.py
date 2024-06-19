@@ -8,27 +8,15 @@ from PrepareDataPage.front import open_prepare_data_page
 def open_main_page(user_id):
     root = tk.Tk()
     root.title("Pagina principala")
-    root.geometry("787x545")  # Window size
-
-    welcome_label = ttk.Label(root, text=f"Bine ai venit, ID-ul tău este: {user_id}")
-    welcome_label.pack(pady=20)
+    root.state('zoomed')
 
     menu_bar = Menu(root)
     root.config(menu=menu_bar)
 
-    file_menu = Menu(menu_bar, tearoff=0)
-    menu_bar.add_cascade(label="Pagina principala", menu=file_menu)
-    menu_bar.add_command(label="Adaugare date")
-    menu_bar.add_command(label="Preprocesare date")
-    menu_bar.add_command(label="Analizarea datelor")
-    menu_bar.add_command(label="Vizualizare rezultate")
-    menu_bar.add_command(label="Detalii cont")
-    menu_bar.add_command(label="Deconectare")
-
     frame = ttk.Frame(root, padding="10")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    label = ttk.Label(frame, text="Seturi de date anterioare")
+    label = ttk.Label(frame, text="Seturi de date salvate local:")
     label.pack()
 
     listbox = tk.Listbox(frame, height=10, width=50, activestyle='dotbox')
