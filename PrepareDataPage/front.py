@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from AnalyzeData.front import open_analysis_page
-from PrepareDataPage.functions import update_entry_and_methods
+from PrepareDataPage.functions import update_entry_and_methods, save_csv
 
 def open_prepare_data_page(user_id, dataframe):
     prepare_window = tk.Toplevel()
