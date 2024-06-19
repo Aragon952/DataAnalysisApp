@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from AnalyzeData.front import open_analysis_page
+from AnalyzeData.front import open_analyze_data_page
 from PrepareDataPage.functions import update_entry_and_methods, save_csv
 
 def open_prepare_data_page(user_id, dataframe):
@@ -76,7 +76,7 @@ def open_prepare_data_page(user_id, dataframe):
     alpha_listbox.bind('<<ListboxSelect>>', lambda event: update_entry_and_methods(alpha_listbox, entry, method_cb, ['Codifică', 'Umple goluri']))
 
      # Analyze button
-    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analysis_page(user_id, dataframe))
+    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analyze_data_page(user_id, dataframe))
     execute_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
     # Save data button
