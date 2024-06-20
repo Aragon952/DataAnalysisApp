@@ -1,7 +1,15 @@
 import tkinter as tk
 from tkinter import ttk
 from AnalyzeData.front import open_analyze_data_page
-from PrepareDataPage.functions import update_entry_and_methods, save_csv
+from PrepareDataPage.functions import update_entry_and_methods, save_csv, apply_method
+
+
+numeric_values_methods_list = ['Selectare Coloane','FillNa cu mediana', 'FillNa cu medie', 'FillNa cu valoare specifică', 
+                               'MICE', 'Replace', 'Standardizare', 'Normalizare', 'Tratare outlieri', 'Grupare', 
+                               'Redenumire coloană', 'Eliminare coloană']
+alfanumeric_values_methods_list = ['Selectare Coloane', 'FillNa cu valoare specifică', 'Replace','String Slicing', 
+                                   'Codare binara pe pozitii', 'Codificare numerica', 'Grupare', 'Redenumire coloană', 'Eliminare coloană']
+
 
 def open_prepare_data_page(user_id, dataframe):
     prepare_window = tk.Toplevel()
@@ -45,17 +53,17 @@ def open_prepare_data_page(user_id, dataframe):
     ttk.Label(list_frame, text="Coloane numerice").pack(side=tk.LEFT, padx=10)
     num_listbox = tk.Listbox(list_frame, height=5)
     num_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
-    num_methods = ttk.Combobox(list_frame, values=['Normalizează', 'Standardizează'])
+    num_methods = ttk.Combobox(list_frame, values = numeric_values_methods_list, width=25)
     num_methods.pack(side=tk.LEFT, padx=10)
-    ttk.Button(list_frame, text="Folosește metoda pe toate numericele", command=lambda: apply_method(dataframe, num_methods.get(), 'numeric')).pack(side=tk.LEFT, padx=10)
+    ttk.Button(list_frame, text="Folosește metoda pe\ncoloanele numericele", command=lambda: apply_method(dataframe, num_methods.get(), 'numeric')).pack(side=tk.LEFT, padx=10)
 
     # Alphanumeric columns setup
     ttk.Label(list_frame, text="Coloane alfanumerice").pack(side=tk.LEFT, padx=10)
     alpha_listbox = tk.Listbox(list_frame, height=5)
     alpha_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
-    alpha_methods = ttk.Combobox(list_frame, values=['Codifică', 'Umple goluri'])
+    alpha_methods = ttk.Combobox(list_frame, values = alfanumeric_values_methods_list, width=25)
     alpha_methods.pack(side=tk.LEFT, padx=10)
-    ttk.Button(list_frame, text="Folosește metoda pe toate alfanumericele", command=lambda: apply_method(dataframe, alpha_methods.get(), 'alpha')).pack(side=tk.LEFT, padx=10)
+    ttk.Button(list_frame, text="Aplica metoda pecoloanele alfanumericele", command=lambda: apply_method(dataframe, alpha_methods.get(), 'alpha')).pack(side=tk.LEFT, padx=10)
 
     # Populate listboxes
     for col in dataframe.select_dtypes(include='number').columns:
@@ -86,11 +94,3 @@ def open_prepare_data_page(user_id, dataframe):
     prepare_window.mainloop()
 
 
-def apply_method(dataframe, method, col_type):
-    if col_type == 'numeric':
-        columns = dataframe.select_dtypes(include='number').columns
-    else:
-        columns = dataframe.select_dtypes(exclude='number').columns
-    
-    print(f"Applying {method} to all {col_type} columns: {', '.join(columns)}")
-    # Here, implement the actual preprocessing logic for each column
