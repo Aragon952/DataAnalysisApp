@@ -30,7 +30,6 @@ def select_item(event, listbox, user_id):
         return selected, file_path
     return None, None
 
-
 def on_select(event, user_id, listbox, selected_file_entry, dataframe_container):
     selected, file_path = select_item(event, listbox, user_id)
     if selected:

@@ -5,7 +5,11 @@ from PrepareDataPage.front import open_prepare_data_page
 from AddDataPage.functions import load_csv, save_csv
 
 def open_add_data_page(user_id):
-    add_data_window = tk.Toplevel()
+    def on_closing():
+        add_data_window.destroy()
+        open_prepare_data_page(user_id)
+
+    add_data_window = tk.Tk()  # Create a new Tk instance instead of Toplevel
     add_data_window.title("Adaugare date")
     add_data_window.state('zoomed')
 
@@ -31,10 +35,8 @@ def open_add_data_page(user_id):
     save_button = ttk.Button(add_data_window, text="Salvează setul de date local", command=lambda: save_csv(dataframe_container["dataframe"], dataframe_container["file_name"], user_id))
     save_button.pack(pady=10, fill=tk.X)
 
-    prep_button = ttk.Button(add_data_window, text="Preprocesare Date", command=lambda: open_prepare_data_page(user_id, dataframe_container["dataframe"]))
+    prep_button = ttk.Button(add_data_window, text="Preprocesare Date", command=lambda: [add_data_window.destroy(), open_prepare_data_page(user_id, dataframe_container["dataframe"])])
     prep_button.pack(pady=10, fill=tk.X)
 
+    add_data_window.protocol("WM_DELETE_WINDOW", on_closing)
     add_data_window.mainloop()
-
-
-

@@ -2,8 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from AnalyzeData.functions import save_csv, display_analysis_results, assisted_modeling, analyze_data, apply_method_to_all_columns
 
-def open_analyze_data_page(user_id, dataframe):
-    analyze_window = tk.Toplevel()
+def open_analyze_data_page(user_id, dataframe, prepare_window):
+    prepare_window.destroy()
+    analyze_window = tk.Tk()
     analyze_window.title("Analiza Datelor")
     analyze_window.state("zoomed")
 

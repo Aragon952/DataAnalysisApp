@@ -25,7 +25,6 @@ def open_main_page(user_id):
     for item in data_sets:
         listbox.insert(tk.END, item)
 
-
     dataframe_container = {"dataframe": pd.DataFrame()}
 
     listbox.bind('<<ListboxSelect>>', lambda event: on_select(event, user_id, listbox, selected_file_entry, dataframe_container))
@@ -39,7 +38,7 @@ def open_main_page(user_id):
     buttons_frame = ttk.Frame(frame)
     buttons_frame.pack(fill=tk.X, pady=10)
 
-    btn_select = ttk.Button(buttons_frame, text="Selectare date pentru preprocesare", command=lambda: open_prepare_data_page(user_id, dataframe_container["dataframe"]))
+    btn_select = ttk.Button(buttons_frame, text="Selectare date pentru preprocesare", command=lambda: [root.destroy(), open_prepare_data_page(user_id, dataframe_container["dataframe"])])
     btn_select.pack(fill=tk.X, padx=5, pady=2)
 
     btn_analyze = ttk.Button(buttons_frame, text="Selectare date pentru analiza")
