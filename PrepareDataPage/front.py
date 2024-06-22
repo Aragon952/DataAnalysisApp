@@ -7,7 +7,7 @@ numeric_methods_all_columns = ['Selectare Coloane','FillNa cu mediana', 'FillNa 
                                'MICE', 'Standardizare', 'Normalizare', 'Tratare outlieri', 'Grupare', 'Eliminare coloane']
 numeric_methods_one_column = ['Replace', 'Redenumire coloana', 'Eliminare coloana', 'FillNa cu mediana', 'FillNa cu medie', 
                               'FillNa cu valoare specifică', 'MICE', 'Standardizare', 'Normalizare', 'Tratare outlieri']
-alfanumeric_methods_all_columns = ['FillNa cu valoare specifică', 'String Slicing', 'Codare binara pe pozitii', 
+alfanumeric_methods_all_columns = ['Selectare coloane','FillNa cu valoare specifică', 'String Slicing', 'Codare binara pe pozitii', 
                                    'Codificare numerica', 'Grupare', 'Eliminare coloane']
 alfanumeric_methods_one_column = ['FillNa cu valoare specifică', 'Replace', 'String Slicing', 'Codare binara pe pozitii', 
                                   'Codificare numerica', 'Redenumire coloană', 'Eliminare coloană']
@@ -63,25 +63,25 @@ def open_prepare_data_page(user_id, dataframe):
     def handle_numeric_all_method_selection(event):
         selected_method = num_methods.get()
         if selected_method == 'Selectare Coloane':
-            select_columns(dataframe_container["dataframe"], tree_frame, dataframe_container, num_listbox, alpha_listbox)
+            select_columns(dataframe_container, main_tree, num_listbox, alpha_listbox)
         elif selected_method == 'FillNa cu mediana':
-            fill_na_with_median(dataframe_container, tree_frame)
+            fill_numeric_nan_with_median(dataframe_container, tree_frame)
         elif selected_method == 'FillNa cu medie':
-            fill_na_with_mean(dataframe_container, tree_frame)
+            fill_all_numeric_nan_with_mean(dataframe_container, tree_frame)
         elif selected_method == 'FillNa cu valoare specifică':
-            fill_na_with_specific_value(dataframe_container, tree_frame)
+            fill_all_numeric_nan_with_specific_numeric_value(dataframe_container, tree_frame)
         elif selected_method == 'MICE':
-            perform_mice_imputation(dataframe_container, tree_frame)
+            mice_imputation_all_numeric(dataframe_container, tree_frame)
         elif selected_method == 'Standardizare':
-            perform_standardization(dataframe_container, tree_frame)
+            standardize_all_numeric(dataframe_container, tree_frame)
         elif selected_method == 'Normalizare':
-            perform_normalization(dataframe_container, tree_frame)
+            normalize_all_numeric(dataframe_container, tree_frame)
         elif selected_method == 'Tratare outlieri':
-            handle_outliers(dataframe_container, tree_frame)
+            handle_outliers_all_numeric(dataframe_container, tree_frame)
         elif selected_method == 'Grupare':
-            perform_grouping(dataframe_container, tree_frame)
+            group_all_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listbox)
         elif selected_method == 'Eliminare coloane':
-            remove_columns(dataframe_container, tree_frame)
+            remove_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox)
         else:
             print("Method not implemented yet")
 
@@ -93,7 +93,27 @@ def open_prepare_data_page(user_id, dataframe):
     alpha_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
     alpha_methods = ttk.Combobox(list_frame, values=alfanumeric_methods_all_columns, width=25)
     alpha_methods.pack(side=tk.LEFT, padx=10)
-    ttk.Button(list_frame, text="Aplica metoda pe\ncoloanele alfanumerice").pack(side=tk.LEFT, padx=10)
+
+    def handle_alphanumeric_all_method_selection(event):
+        selected_method = alpha_methods.get()
+        if selected_method == 'Selectare coloane':
+            select_columns(dataframe_container, main_tree, num_listbox, alpha_listbox)
+        elif selected_method == 'FillNa cu valoare specifică':
+            fill_all_alfanumeric_nan_with_specific_alpha_value(dataframe_container, tree_frame)
+        elif selected_method == 'String Slicing':
+            string_slicing_all_alfanumeric(dataframe_container, tree_frame)
+        elif selected_method == 'Codare binara pe pozitii':
+            binary_encoding_all_alfanumeric(dataframe_container, tree_frame, num_listbox, alpha_listbox)
+        elif selected_method == 'Codificare numerica':
+            numeric_encoding_all_alfanumeric(dataframe_container, tree_frame, num_listbox, alpha_listbox)
+        elif selected_method == 'Grupare':
+            group_all_alfanumeric_data(dataframe_container, tree_frame, num_listbox, alpha_listbox)
+        elif selected_method == 'Eliminare coloane':
+            remove_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox)
+        else:
+            print("Method not implemented yet")
+
+    alpha_methods.bind('<<ComboboxSelected>>', handle_alphanumeric_all_method_selection)
 
     # Populate listboxes
     for col in dataframe_container["dataframe"].select_dtypes(include='number').columns:
@@ -105,13 +125,74 @@ def open_prepare_data_page(user_id, dataframe):
     entry = ttk.Entry(main_frame)
     entry.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
-    method_cb = ttk.Combobox(main_frame)
-    method_cb.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
-    ttk.Button(main_frame, text="Folosește metoda pentru coloană").pack(side=tk.LEFT, padx=10, pady=10)
+    def update_entry_from_numeric_listbox(event):
+    # Verificarea dacă există un element selectat
+        if num_listbox.curselection():
+            # Obținerea elementului selectat
+            selected_item = num_listbox.get(num_listbox.curselection())
+            # Ștergerea conținutului curent din Entry
+            entry.delete(0, tk.END)
+            # Inserarea elementului selectat în Entry
+            entry.insert(0, selected_item)
 
-    # Bind listbox selection changes
-    num_listbox.bind('<<ListboxSelect>>', lambda event: update_methods_for_one_column(num_listbox, entry, method_cb, numeric_methods_one_column))
-    alpha_listbox.bind('<<ListboxSelect>>', lambda event: update_methods_for_one_column(alpha_listbox, entry, method_cb, alfanumeric_methods_one_column))
+    # Legarea evenimentului de selectare în Listbox la funcția definită
+    num_listbox.bind('<<ListboxSelect>>', update_entry_from_numeric_listbox)
+
+    def update_entry_from_alfa_listbox(event):
+        if alpha_listbox.curselection():
+            selected_item = alpha_listbox.get(alpha_listbox.curselection())
+            entry.delete(0, tk.END)
+            entry.insert(0, selected_item)
+
+    alpha_listbox.bind('<<ListboxSelect>>', update_entry_from_alfa_listbox)
+
+    method_cb = ttk.Combobox(main_frame, values = numeric_methods_one_column + alfanumeric_methods_one_column, width=25)
+    method_cb.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
+
+
+    def handle_method_selection(event):
+        selected_method = method_cb.get()
+        selected_column = entry.get()
+        print(selected_method)
+        print(type(selected_column))
+        try:
+            if selected_method == 'Replace':
+                replace_column(dataframe_container, tree_frame, selected_column, entry.get())
+            elif selected_method == 'Redenumire coloana':
+                rename_column(dataframe_container, tree_frame, selected_column, entry.get())
+            elif selected_method == 'Eliminare coloana':
+                remove_column(dataframe_container, tree_frame, entry.get())
+            elif selected_method == 'FillNa cu mediana':
+                fill_numeric_nan_with_median(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'FillNa cu medie':
+                fill_numeric_nan_with_mean(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'FillNa cu valoare specifică':
+                fill_numeric_nan_with_specific_value(dataframe_container, tree_frame, selected_column, entry.get())
+            elif selected_method == 'MICE':
+                mice_imputation_numeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'Standardizare':
+                standardize_numeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'Normalizare':
+                normalize_numeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'Tratare outlieri':
+                handle_outliers_numeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'String Slicing':
+                string_slicing_alfanumeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'Codare binara pe pozitii':
+                binary_encoding_alfanumeric(dataframe_container, tree_frame, selected_column, entry.get())
+            elif selected_method == 'Codificare numerica':
+                numeric_encoding_alfanumeric(dataframe_container, tree_frame, selected_column)
+            elif selected_method == 'Redenumire coloană':
+                rename_column(dataframe_container, tree_frame, selected_column, entry.get())
+            elif selected_method == 'Eliminare coloană':
+                remove_column(dataframe_container, tree_frame, selected_column)
+            else:
+                print("Method not implemented yet")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An unexpected error occurred: {str(e)}")
+
+    method_cb.bind('<<ComboboxSelected>>', handle_method_selection)
 
     # Analyze button
     execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analyze_data_page(user_id, dataframe_container["dataframe"], prepare_window))
@@ -120,9 +201,6 @@ def open_prepare_data_page(user_id, dataframe):
     # Save data button
     save_button = ttk.Button(main_frame, text="Salvează datele", command=lambda: save_csv(dataframe_container, user_id))
     save_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
-
-    ttk.Button(list_frame, text="Select Columns", command=lambda: select_columns(dataframe_container["dataframe"], main_tree, dataframe_container)).pack(side=tk.LEFT, padx=10)
-
 
     prepare_window.protocol("WM_DELETE_WINDOW", on_closing)
     prepare_window.mainloop()

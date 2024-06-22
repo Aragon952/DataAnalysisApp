@@ -16,7 +16,7 @@ def setup_gui():
     username_entry = ttk.Entry(root)
     username_entry.grid(row=0, column=1, padx=10, pady=10)
 
-    password_label = ttk.Label(root, text="Parola:")
+    password_label = ttk.Label(root, text="Parola:")    
     password_label.grid(row=1, column=0, padx=10, pady=10)
     password_entry = ttk.Entry(root, show="*")
     password_entry.grid(row=1, column=1, padx=10, pady=10)
