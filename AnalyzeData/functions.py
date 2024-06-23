@@ -4,7 +4,6 @@ import pandas as pd
 import os
 import openai
 
-api_key = "sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY"
 
 def update_treeview(dataframe, tree_frame):
     for i in tree_frame.get_children():
@@ -74,7 +73,7 @@ def apply_descriptive_statistics(dataframe, columns):
         analyze_button.pack(pady=10)
 
     # Setează cheia API folosind o variabilă de mediu
-    openai.api_key = 'sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY'
+    openai.api_key = "sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY"
 
     # Asigură-te că cheia API este disponibilă
     if not openai.api_key:
