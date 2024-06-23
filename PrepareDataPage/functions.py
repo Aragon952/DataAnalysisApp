@@ -559,7 +559,6 @@ def standardize_numeric(dataframe_container, tree_frame, columns):
 
     top.mainloop()
 
-
 def normalize_numeric(dataframe_container, tree_frame, columns):
     top = tk.Toplevel()
     top.title("Normalize Numeric Columns")
@@ -923,7 +922,6 @@ def numeric_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_l
 
     top.mainloop()
 
-
 # Alte metode apelate in front
 
 def save_csv(dataframe_container, user_id):
@@ -936,7 +934,7 @@ def save_csv(dataframe_container, user_id):
         if not file_name.endswith(".csv"):
             file_name += ".csv"
         
-        directory = f"C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults\\{user_id}"
+        directory = f"C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults\\{user_id}\\DataSets"
         
         if not os.path.exists(directory):
             os.makedirs(directory)

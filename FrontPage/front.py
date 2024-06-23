@@ -4,6 +4,7 @@ from FrontPage.functions import fetch_datasets, on_select
 from AddDataPage.front import open_add_data_page
 import pandas as pd
 from PrepareDataPage.front import open_prepare_data_page
+from AnalyzeData.front import open_analyze_data_page
 
 def open_main_page(user_id):
     root = tk.Tk()
@@ -41,10 +42,10 @@ def open_main_page(user_id):
     btn_select = ttk.Button(buttons_frame, text="Selectare date pentru preprocesare", command=lambda: [root.destroy(), open_prepare_data_page(user_id, dataframe_container["dataframe"])])
     btn_select.pack(fill=tk.X, padx=5, pady=2)
 
-    btn_analyze = ttk.Button(buttons_frame, text="Selectare date pentru analiza")
+    btn_analyze = ttk.Button(buttons_frame, text="Selectare date pentru analiza", command=lambda: [root.destroy(), open_analyze_data_page(user_id, dataframe_container["dataframe"])])
     btn_analyze.pack(fill=tk.X, padx=5, pady=2)
 
-    btn_add = ttk.Button(buttons_frame, text="Adaugare set de date nou", command=lambda: open_add_data_page(user_id))
+    btn_add = ttk.Button(buttons_frame, text="Adaugare set de date nou", command=lambda: [root.destroy(), open_add_data_page(user_id)])
     btn_add.pack(fill=tk.X, padx=5, pady=2)
 
     btn_view = ttk.Button(buttons_frame, text="Vizualizare Rezultate salvate")

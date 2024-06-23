@@ -22,6 +22,12 @@ def create_account(name, password):
         user_folder_path = os.path.join("C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults", str(user_id))
         os.makedirs(user_folder_path, exist_ok=True)  # 'exist_ok=True' pentru a evita erorile dacă folderul există deja
 
+        datasets_folder_path = os.path.join(user_folder_path, "DataSets")
+        results_folder_path = os.path.join(user_folder_path, "Results")
+        
+        os.makedirs(datasets_folder_path, exist_ok=True)
+        os.makedirs(results_folder_path, exist_ok=True)
+
         messagebox.showinfo("Succes", "Contul a fost creat cu succes și folderul a fost generat.")
         
     except sqlite3.IntegrityError:

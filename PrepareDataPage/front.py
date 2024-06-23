@@ -11,9 +11,6 @@ alfanumeric_methods = ['Selectare coloane', 'Eliminare coloane', 'Replace', 'Red
                         'FillNa cu valoare specifică', 'String Slicing']
 
 def open_prepare_data_page(user_id, dataframe):
-    def on_closing():
-        prepare_window.destroy()
-    
     dataframe_container = {"dataframe": dataframe}
 
     prepare_window = tk.Tk()  # Create a new Tk instance instead of Toplevel
@@ -145,12 +142,12 @@ def open_prepare_data_page(user_id, dataframe):
 
 
     # Analyze button
-    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda: open_analyze_data_page(user_id, dataframe_container["dataframe"], prepare_window))
+    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda:[prepare_window.destroy(), open_analyze_data_page(user_id, dataframe_container["dataframe"])])
     execute_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
     # Save data button
     save_button = ttk.Button(main_frame, text="Salvează datele", command=lambda: save_csv(dataframe_container, user_id))
     save_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
-    prepare_window.protocol("WM_DELETE_WINDOW", on_closing)
+
     prepare_window.mainloop()

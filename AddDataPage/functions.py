@@ -27,7 +27,7 @@ def save_csv(dataframe, file_name, user_id):
     if not file_name:
         messagebox.showwarning("Atenție", "Nu a fost încărcat niciun fișier.")
         return
-    folder_path = os.path.join("C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults", str(user_id))
+    folder_path = os.path.join("C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults", str(user_id),"DataSets")
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     filepath = os.path.join(folder_path, file_name)
