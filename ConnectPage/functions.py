@@ -6,7 +6,6 @@ from FrontPage.front import open_main_page
 def connect_db():
     return sqlite3.connect('DataAnalysisApp/database.db')
 
-
 def create_account(name, password):
     conn = connect_db()
     cursor = conn.cursor()
@@ -14,13 +13,11 @@ def create_account(name, password):
         cursor.execute("INSERT INTO users_information (name, password) VALUES (?, ?)", (name, password))
         conn.commit()
         
-        # Recuperarea ID-ului utilizatorului recent adăugat
         cursor.execute("SELECT id FROM users_information WHERE name=?", (name,))
         user_id = cursor.fetchone()[0]
         
-        # Crearea folderului pentru noul utilizator
         user_folder_path = os.path.join("C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults", str(user_id))
-        os.makedirs(user_folder_path, exist_ok=True)  # 'exist_ok=True' pentru a evita erorile dacă folderul există deja
+        os.makedirs(user_folder_path, exist_ok=True)
 
         datasets_folder_path = os.path.join(user_folder_path, "DataSets")
         results_folder_path = os.path.join(user_folder_path, "Results")
@@ -46,7 +43,16 @@ def login(name, password, root):
     if user:
         user_id = user[0]
         messagebox.showinfo("Succes", "Te-ai conectat cu succes!")
-        root.destroy()  # Închide fereastra de conectare
-        open_main_page(user_id)  # Deschide pagina principală cu ID-ul utilizatorului
+        root.destroy()
+        open_main_page(user_id)
     else:
         messagebox.showerror("Eroare", "Numele de utilizator sau parola sunt incorecte.")
+
+def center_window(root, width, height):
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    
+    x = (screen_width // 2) - (width // 2)
+    y = (screen_height // 2) - (height // 2)
+    
+    root.geometry(f'{width}x{height}+{x}+{y}')
