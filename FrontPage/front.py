@@ -39,16 +39,13 @@ def open_main_page(user_id):
     buttons_frame = ttk.Frame(frame)
     buttons_frame.pack(fill=tk.X, pady=10)
 
+    btn_add = ttk.Button(buttons_frame, text="Adaugare set de date nou", command=lambda: [root.destroy(), open_add_data_page(user_id)])
+    btn_add.pack(fill=tk.X, padx=5, pady=2)
+
     btn_select = ttk.Button(buttons_frame, text="Selectare date pentru preprocesare", command=lambda: [root.destroy(), open_prepare_data_page(user_id, dataframe_container["dataframe"])])
     btn_select.pack(fill=tk.X, padx=5, pady=2)
 
     btn_analyze = ttk.Button(buttons_frame, text="Selectare date pentru analiza", command=lambda: [root.destroy(), open_analyze_data_page(user_id, dataframe_container["dataframe"])])
     btn_analyze.pack(fill=tk.X, padx=5, pady=2)
-
-    btn_add = ttk.Button(buttons_frame, text="Adaugare set de date nou", command=lambda: [root.destroy(), open_add_data_page(user_id)])
-    btn_add.pack(fill=tk.X, padx=5, pady=2)
-
-    btn_view = ttk.Button(buttons_frame, text="Vizualizare Rezultate salvate")
-    btn_view.pack(fill=tk.X, padx=5, pady=2)
 
     root.mainloop()

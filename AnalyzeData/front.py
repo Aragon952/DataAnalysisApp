@@ -2,9 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from AnalyzeData.functions import *
 
-numeric_methods = ['Statistici descriptive', 'Regresie Liniara', 'Regresie Logistica', 'Analiza Cluster', 'Testare de Ipoteze', 
+numeric_methods = ['Statistici descriptive', 'Regresie Liniara', 'Regresie Logistica', 'Analiza Cluster', 
                    'Analiza de Corelatie', 'Analiza Componente Principale', 'Analiza Discriminanta Lineara', 
-                   'Metode Bayesian']
+                   'Metode Bayesian', 'Tabel de Contingenta']
 alfanumeric_methods = ['Frecventa si distributie', 'Tabel de Contingenta', 'Testul Chi-patrat', 'Analiza Asociatiei',
                        'Analiza de Sentiment', ]
 
@@ -58,16 +58,16 @@ def open_analyze_data_page(user_id, dataframe):
             apply_logistic_regression(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Cluster':
             apply_cluster_analysis(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
-        elif selected_method == 'Testare de Ipoteze':
-            apply_hypothesis_testing(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza de Corelatie':
             apply_correlation_analysis(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Componente Principale':
             apply_pca(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Discriminanta Lineara':
-            apply_lda(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
+            apply_lda(dataframe, dataframe.columns.tolist())
         elif selected_method == 'Metode Bayesian':
-            apply_bayesian_methods(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
+            apply_bayesian_methods(dataframe, dataframe.columns.tolist())
+        elif selected_method == 'Tabel de Contingenta':
+            apply_contingency_table(dataframe, dataframe.columns.tolist())
         else:
             print("Method not implemented yet")
 
@@ -82,15 +82,15 @@ def open_analyze_data_page(user_id, dataframe):
     def handle_alpha_methods(event):
         selected_method = alpha_methods.get()
         if selected_method == 'Frecventa si distributie':
-            apply_frequency_distribution(dataframe)
+            apply_frequency_distribution(dataframe, dataframe.select_dtypes(exclude='number').columns.tolist())
         elif selected_method == 'Tabel de Contingenta':
-            apply_contingency_table(dataframe)
+            apply_contingency_table(dataframe, dataframe.columns.tolist())
         elif selected_method == 'Testul Chi-patrat':
-            apply_chi_square_test(dataframe)
+            apply_chi_square_test(dataframe, dataframe.select_dtypes(exclude='number').columns.tolist())
         elif selected_method == 'Analiza Asociatiei':
-            apply_association_analysis(dataframe)
+            apply_association_analysis(dataframe, dataframe.columns.tolist())
         elif selected_method == 'Analiza de Sentiment':
-            apply_sentiment_analysis(dataframe)
+            apply_sentiment_analysis(dataframe, dataframe.select_dtypes(exclude='number').columns.tolist())
         else:
             print("Method not implemented yet")
 

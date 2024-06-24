@@ -75,21 +75,10 @@ def get_value_from_user(prompt):
     return dialog_root.user_value if hasattr(dialog_root, 'user_value') else None
 
 def update_listboxes(dataframe, num_listbox, alpha_listbox):
-    # Curățăm întâi conținutul actual al listbox-urilor
     num_listbox.delete(0, tk.END)
     alpha_listbox.delete(0, tk.END)
-
-    # Adăugăm coloanele noi în listbox-uri
-    # Identificăm coloanele numerice și alfanumerice
-    numeric_columns = dataframe.select_dtypes(include='number').columns
-    alfanumeric_columns = dataframe.select_dtypes(exclude='number').columns
-
-    # Actualizăm listbox-ul pentru coloanele numerice
-    for col in numeric_columns:
+    for col in dataframe.columns:
         num_listbox.insert(tk.END, col)
-
-    # Actualizăm listbox-ul pentru coloanele alfanumerice
-    for col in alfanumeric_columns:
         alpha_listbox.insert(tk.END, col)
 
 def detect_outliers_percentile(column_data, threshold):
@@ -751,9 +740,9 @@ def fill_alphanumeric_nan_with_specific_value(dataframe_container, tree_frame, c
         value = value_entry.get()
         selected_columns = [listbox.get(i) for i in listbox.curselection()]
         if value and selected_columns:
-            dataframe = dataframe_container['dataframe']
+            dataframe = dataframe_container['dataframe'].copy()  # Faceți o copie a DataFrame-ului
             for column in selected_columns:
-                dataframe[column] = dataframe[column].fillna(value)
+                dataframe.loc[:, column] = dataframe[column].fillna(value)
             dataframe_container['dataframe'] = dataframe
             update_treeview(dataframe_container['dataframe'], tree_frame)
             messagebox.showinfo("Success", "Selected NaN values in alphanumeric columns have been filled.", parent=top)
