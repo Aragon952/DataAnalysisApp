@@ -53,21 +53,21 @@ def open_analyze_data_page(user_id, dataframe):
         if selected_method == 'Statistici descriptive':
             apply_descriptive_statistics(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Regresie Liniara':
-            apply_linear_regression(dataframe)
+            apply_linear_regression(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Regresie Logistica':
-            apply_logistic_regression(dataframe)
+            apply_logistic_regression(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Cluster':
-            apply_cluster_analysis(dataframe)
+            apply_cluster_analysis(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Testare de Ipoteze':
-            apply_hypothesis_testing(dataframe)
+            apply_hypothesis_testing(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza de Corelatie':
-            apply_correlation_analysis(dataframe)
+            apply_correlation_analysis(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Componente Principale':
-            apply_pca(dataframe)
+            apply_pca(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Analiza Discriminanta Lineara':
-            apply_lda(dataframe)
+            apply_lda(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Metode Bayesian':
-            apply_bayesian_methods(dataframe)
+            apply_bayesian_methods(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         else:
             print("Method not implemented yet")
 
