@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -13,18 +13,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from scipy.stats import chi2_contingency
 from mlxtend.frequent_patterns import apriori, association_rules
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import sqlite3
+import os
 
-# Descărcarea resurselor necesare pentru VADER
+
 try:
     nltk.data.find('sentiment/vader_lexicon.zip')
 except LookupError:
     nltk.download('vader_lexicon')
 
-
-api_key = "sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY"
-openai.api_key = api_key
 
 def update_treeview(dataframe, tree_frame):
     for i in tree_frame.get_children():
@@ -38,25 +37,29 @@ def update_treeview(dataframe, tree_frame):
     for row_index, row in dataframe.iterrows():
         tree_frame.insert("", "end", values=list(row))
 
+
+api_key = "sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY"
+openai.api_key = api_key
+
 def request_analysis(response_text, stats_data, generate_message):
     if not openai.api_key:
-        raise ValueError("API key for OpenAI is not set. Please set the OPENAI_API_KEY environment variable.")
+        raise ValueError("Cheia API OpenAI nu este setată. Vă rugăm să o setați și să încercați din nou.")
 
     messages = [
-        {"role": "system", "content": "You are an intelligent assistant tasked with analyzing statistical data."},
+        {"role": "system", "content": "Esti un asistent inteligent insarcinat cu analiza datelor statistice."},
         {"role": "assistant", "content": generate_message(stats_data)}
     ]
 
     try:
         chat = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=messages
         )
         reply = chat.choices[0].message['content']
         response_text.insert(tk.END, "ChatGPT: " + reply + "\n")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to interact with ChatGPT API: {str(e)}")
-        response_text.insert(tk.END, "Failed to retrieve an analysis.\n")
+        messagebox.showerror("Error", f"Interactiune cu ChatGPT nereusita {str(e)}")
+        response_text.insert(tk.END, "Nu s-a putut prelua o analiză.\n")
 
 def save_csv(dataframe, user_id):
     print("Data saved successfully.")
@@ -64,15 +67,67 @@ def save_csv(dataframe, user_id):
 def save_picture(dataframe, user_id):
     print("Picture saved successfully.")
 
-def apply_descriptive_statistics(dataframe, columns):
+def display_results(window_title, data, columns, user_id, analysis_function=None, generate_message=None):
+    def invoke_analysis():
+        if analysis_function and generate_message:
+            analysis_function(response_text, data, generate_message)
+
+    def save_to_csv():
+        base_dir = f"C:/Users/user/Desktop/Licenta/GitApp/DataAndResults/{user_id}/Results"
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+
+        file_name = simpledialog.askstring("File Name", "Enter the name of the file:", parent=results_win)
+        if file_name:
+            file_path = os.path.join(base_dir, file_name + ".csv")
+            data.to_csv(file_path, index=False)
+            messagebox.showinfo("Save to CSV", "File has been saved successfully!")
+            save_file_record(user_id, file_name, file_path)
+
+    def save_file_record(user_id, file_name, file_path):
+        conn = sqlite3.connect('DataAnalysisApp/database.db')
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO user_result_history (result_name, result_path, user_informationid) VALUES (?, ?, ?)", 
+            (file_name, file_path, user_id)
+        )
+        conn.commit()
+        conn.close()
+
+    results_win = tk.Toplevel()
+    results_win.title(window_title)
+    
+    tree = ttk.Treeview(results_win, columns=columns, show="headings", height=10)
+    tree.pack(padx=10, pady=10, fill='both', expand=True)
+    
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, anchor="center", width=80)
+    
+    for index, row in data.iterrows():
+        values = [row[col] for col in columns]
+        tree.insert("", "end", values=values)
+
+    response_text = tk.Text(results_win, height=10, width=50)
+    response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+    if analysis_function:
+        analyze_button = ttk.Button(results_win, text="Request Analysis", command=invoke_analysis)
+        analyze_button.pack(pady=10)
+
+    save_button = ttk.Button(results_win, text="Save to CSV", command=save_to_csv)
+    save_button.pack(pady=10)
+
+
+def apply_descriptive_statistics(dataframe, columns, user_id):
     columns_stats = ['Column_Name', 'Count', 'Mean', 'Std', 'Min', '25%', '50%', '75%', 'Max']
 
-    def generate_statistics_message(stats_data):
+    def generate_statistics_message(stats_df):
         prompt_stats = "Here are the descriptive statistics, please analyze:\n"
-        for index, row in stats_data.iterrows():
+        for _, row in stats_df.iterrows():
             prompt_stats += f"{row['Column_Name']} - Count: {row['Count']}, Mean: {row['Mean']}, Std Dev: {row['Std']}, Min: {row['Min']}, 25%: {row['25%']}, Median: {row['50%']}, 75%: {row['75%']}, Max: {row['Max']}\n"
         return prompt_stats
-    
+
     def apply_statistics(selected_columns):
         if not selected_columns:
             messagebox.showerror("Error", "No columns selected. Please select at least one column.")
@@ -84,29 +139,10 @@ def apply_descriptive_statistics(dataframe, columns):
                 desc_stats = dataframe[column].describe()
                 row = [column] + desc_stats.tolist()
                 stats_rows.append(pd.Series(row, index=columns_stats))
-        
-        stats_df = pd.concat(stats_rows, axis=1).transpose()
-        show_results(stats_df)
 
-    def show_results(stats_df):
-        results_win = tk.Toplevel()
-        results_win.title("Descriptive Statistics Results")
-        tree = ttk.Treeview(results_win, columns=columns_stats, show="headings", height=10)
-        tree.pack(padx=10, pady=10, fill='both', expand=True)
-
-        for col in columns_stats:
-            tree.heading(col, text=col)
-            tree.column(col, anchor="center", width = 80)
-
-        for index, row in stats_df.iterrows():
-            values = [row[col] for col in columns_stats]
-            tree.insert("", "end", values=values)
-
-        response_text = tk.Text(results_win, height=10, width=50)
-        response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
-        analyze_button = ttk.Button(results_win, text="Request ChatGPT Analysis", command=lambda: request_analysis(response_text, stats_df, generate_statistics_message))
-        analyze_button.pack(pady=10)
+        stats_df = pd.DataFrame(stats_rows, columns=columns_stats)
+        stats_df['Column_Name'] = selected_columns
+        display_results("Descriptive Statistics Results", stats_df, columns_stats, user_id, request_analysis, generate_statistics_message)
 
     top = tk.Toplevel()
     top.title("Calculate Descriptive Statistics")
@@ -114,7 +150,7 @@ def apply_descriptive_statistics(dataframe, columns):
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height = 10)
+    listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
     for col in columns:
         listbox.insert(tk.END, col)
     listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -123,7 +159,8 @@ def apply_descriptive_statistics(dataframe, columns):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    apply_button = ttk.Button(main_frame, text="Calculate Statistics for Selected Columns", command=lambda: apply_statistics([listbox.get(i) for i in listbox.curselection()]))
+    apply_button = ttk.Button(main_frame, text="Calculate Statistics for Selected Columns", 
+                              command=lambda: apply_statistics([listbox.get(i) for i in listbox.curselection()]))
     apply_button.pack(pady=10)
 
     top.mainloop()
@@ -133,41 +170,9 @@ def apply_linear_regression(dataframe, columns):
         prompt_stats = "Here are the linear regression results, please analyze:\n"
         prompt_stats += f"R-squared: {results.rsquared}, Adjusted R-squared: {results.rsquared_adj}\n"
         prompt_stats += f"F-statistic: {results.fvalue}, Prob (F-statistic): {results.f_pvalue}\n"
-        
-        # Iterate over the regression coefficients
         for param_name, param in results.params.items():
             prompt_stats += f"{param_name}: Coefficient = {param}, P>|t| = {results.pvalues[param_name]}\n"
-
         return prompt_stats
-
-
-    top = tk.Toplevel()
-    top.title("Perform Linear Regression")
-
-    # Setarea frame-ului principal
-    main_frame = ttk.Frame(top, padding="3 3 12 12")
-    main_frame.pack(fill=tk.BOTH, expand=True)
-
-    # Listbox pentru variabila dependentă
-    label_dep = ttk.Label(main_frame, text="Select the dependent variable:")
-    label_dep.pack(padx=10, pady=5)
-    listbox_dep = tk.Listbox(main_frame, selectmode='single', exportselection=0, height=6)
-    listbox_dep.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
-
-    # Listbox pentru variabilele independente
-    label_indep = ttk.Label(main_frame, text="Select the independent variables:")
-    label_indep.pack(padx=10, pady=5)
-    listbox_indep = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
-    listbox_indep.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
-
-    # Adăugarea coloanelor în listbox-uri
-    for col in columns:
-        listbox_dep.insert(tk.END, col)
-        listbox_indep.insert(tk.END, col)
-
-    # Buton pentru efectuarea regresiei
-    button_run = ttk.Button(main_frame, text="Run Regression", command=lambda: perform_regression(listbox_dep, listbox_indep))
-    button_run.pack(pady=20)
 
     def perform_regression(listbox_dep, listbox_indep):
         dep_var = listbox_dep.get(listbox_dep.curselection())
@@ -176,42 +181,44 @@ def apply_linear_regression(dataframe, columns):
         if not dep_var or not indep_vars:
             messagebox.showerror("Error", "Please select at least one dependent and one or more independent variables.")
             return
-        
-        # Prepare the data
+
         X = dataframe[indep_vars]
-        X = sm.add_constant(X)  # Adds a constant term to the predictor
+        X = sm.add_constant(X) 
         y = dataframe[dep_var]
 
-        # Fit the linear regression model
         model = sm.OLS(y, X)
-        results = model.fit()  # This is the RegressionResults object
+        results = model.fit()
+        display_results("Regression Results", results, generate_regression_message)
 
-        # Now you can pass 'results' to generate message and request analysis functions
-        show_results(results)
+    top = tk.Toplevel()
+    top.title("Perform Linear Regression")
 
-    def show_results(results):
-        results_win = tk.Toplevel()
-        results_win.title("Regression Results")
-        text = tk.Text(results_win, wrap="word")
-        text.insert(tk.END, results.summary().as_text())  # Use as_text() to display summary in a Text widget
-        text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+    main_frame = ttk.Frame(top, padding="3 3 12 12")
+    main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Text widget for ChatGPT response
-        response_text = tk.Text(results_win, height=10, width=50)
-        response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+    label_dep = ttk.Label(main_frame, text="Select the dependent variable:")
+    label_dep.pack(padx=10, pady=5)
+    listbox_dep = tk.Listbox(main_frame, selectmode='single', exportselection=0, height=6)
+    listbox_dep.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-        # Button for ChatGPT analysis
-        analyze_button = ttk.Button(results_win, text="Request ChatGPT Analysis",
-                                    command=lambda: request_analysis(response_text, results, generate_regression_message))
-        analyze_button.pack(pady=10)
+    label_indep = ttk.Label(main_frame, text="Select the independent variables:")
+    label_indep.pack(padx=10, pady=5)
+    listbox_indep = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
+    listbox_indep.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
+    for col in columns:
+        listbox_dep.insert(tk.END, col)
+        listbox_indep.insert(tk.END, col)
+
+    button_run = ttk.Button(main_frame, text="Run Regression", command=lambda: perform_regression(listbox_dep, listbox_indep))
+    button_run.pack(pady=20)
 
     top.mainloop()
 
 def apply_logistic_regression(dataframe, columns):
     def perform_logistic_regression(dep_var, indep_vars):
         formula = f"{dep_var} ~ " + " + ".join(indep_vars)
-        model = smf.logit(formula, data=dataframe).fit(disp=0)  # disp=0 to suppress fit output
+        model = smf.logit(formula, data=dataframe).fit(disp=0)
         return model
 
     def show_results(model):
@@ -268,7 +275,6 @@ def apply_cluster_analysis(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Labels and Listboxes for selecting variables from the given columns
     ttk.Label(main_frame, text="Select the first variable for clustering:").pack(padx=10, pady=5)
     var1 = ttk.Combobox(main_frame, values=columns, state="readonly")
     var1.pack(padx=10, pady=5)
@@ -277,7 +283,6 @@ def apply_cluster_analysis(dataframe, columns):
     var2 = ttk.Combobox(main_frame, values=columns, state="readonly")
     var2.pack(padx=10, pady=5)
 
-    # Entry for the number of clusters
     ttk.Label(main_frame, text="Enter number of clusters:").pack(padx=10, pady=5)
     num_clusters_entry = ttk.Entry(main_frame, width=10)
     num_clusters_entry.pack(padx=10, pady=5)
@@ -298,7 +303,6 @@ def apply_cluster_analysis(dataframe, columns):
         labels = kmeans.labels_
         centroids = kmeans.cluster_centers_
 
-        # Display results using matplotlib
         fig, ax = plt.subplots()
         scatter = ax.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis', marker='o', alpha=0.5)
         ax.scatter(centroids[:, 0], centroids[:, 1], s=300, c='red', marker='x')
@@ -321,7 +325,6 @@ def apply_correlation_analysis(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Selectarea variabilelor pentru corelație
     label_var1 = ttk.Label(main_frame, text="Selectează prima variabilă:")
     label_var1.pack(padx=10, pady=5)
     var1 = ttk.Combobox(main_frame, values=columns, state="readonly")
@@ -345,7 +348,6 @@ def apply_correlation_analysis(dataframe, columns):
             messagebox.showerror("Eroare", str(e))
 
     def show_results(var1, var2, correlation):
-        # Deschiderea unei noi ferestre pentru rezultate
         results_win = tk.Toplevel()
         results_win.title("Rezultate Corelație")
 
@@ -385,7 +387,7 @@ def apply_pca(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Selectarea variabilelor pentru PCA
+    
     label_var = ttk.Label(main_frame, text="Selectează variabilele:")
     label_var.pack(padx=10, pady=5)
     listbox_vars = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
@@ -393,7 +395,7 @@ def apply_pca(dataframe, columns):
         listbox_vars.insert(tk.END, col)
     listbox_vars.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-    # Câmp pentru numărul de componente principale
+    
     label_num_components = ttk.Label(main_frame, text="Introduceți numărul de componente principale:")
     label_num_components.pack(padx=10, pady=5)
     num_components_entry = ttk.Entry(main_frame, width=10)
@@ -424,14 +426,14 @@ def apply_pca(dataframe, columns):
         return {'explained_variance': explained_variance, 'components': components, 'selected_columns': selected_columns}
 
     def show_results(selected_columns, pca_results):
-        # Deschiderea unei noi ferestre pentru rezultate
+        
         results_win = tk.Toplevel()
         results_win.title("Rezultate PCA")
 
         results_frame = ttk.Frame(results_win, padding="3 3 12 12")
         results_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Configurarea TreeView pentru a afișa mai multe informații
+        
         tree_columns = ["Componenta", "Varianța Explicată"] + [f"Variabilă {i+1}" for i in range(len(selected_columns))]
         tree = ttk.Treeview(results_frame, columns=tree_columns, show="headings")
         for col in tree_columns:
@@ -439,7 +441,7 @@ def apply_pca(dataframe, columns):
             tree.column(col, anchor="center", width=120)
         tree.pack(padx=10, pady=10, expand=True)
 
-        # Introducerea datelor în TreeView
+        
         for i, var_exp in enumerate(pca_results['explained_variance']):
             values = [f"Componenta {i+1}", f"{var_exp:.2f}"] + [f"{v:.2f}" for v in pca_results['components'][:, i]]
             tree.insert("", "end", values=values)
@@ -470,7 +472,7 @@ def apply_lda(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Selectarea variabilelor pentru LDA
+    
     label_var = ttk.Label(main_frame, text="Selectează variabilele:")
     label_var.pack(padx=10, pady=5)
     listbox_vars = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
@@ -478,7 +480,7 @@ def apply_lda(dataframe, columns):
         listbox_vars.insert(tk.END, col)
     listbox_vars.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-    # Selectarea coloanei de clasă pentru LDA
+    
     label_class = ttk.Label(main_frame, text="Selectează coloana de clasă:")
     label_class.pack(padx=10, pady=5)
     class_var = ttk.Combobox(main_frame, values=columns, state="readonly")
@@ -510,14 +512,14 @@ def apply_lda(dataframe, columns):
         return {'explained_variance': explained_variance, 'components': components, 'selected_columns': selected_columns}
 
     def show_results(selected_columns, class_column, lda_results):
-        # Deschiderea unei noi ferestre pentru rezultate
+        
         results_win = tk.Toplevel(root)
         results_win.title("Rezultate LDA")
 
         results_frame = ttk.Frame(results_win, padding="3 3 12 12")
         results_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Configurarea TreeView pentru a afișa mai multe informații
+        
         tree_columns = ["Componenta", "Varianța Explicată"] + [f"Variabilă {i+1}" for i in range(len(selected_columns))]
         tree = ttk.Treeview(results_frame, columns=tree_columns, show="headings")
         for col in tree_columns:
@@ -525,7 +527,7 @@ def apply_lda(dataframe, columns):
             tree.column(col, anchor="center", width=120)
         tree.pack(padx=10, pady=10, expand=True)
 
-        # Introducerea datelor în TreeView
+        
         for i, var_exp in enumerate(lda_results['explained_variance']):
             values = [f"Componenta {i+1}", f"{var_exp:.2f}"] + [f"{v:.2f}" for v in lda_results['components'][:, i]]
             tree.insert("", "end", values=values)
@@ -561,7 +563,7 @@ def apply_bayesian_methods(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Selectarea variabilelor pentru metode bayesiene
+    
     label_var = ttk.Label(main_frame, text="Selectează variabilele:")
     label_var.pack(padx=10, pady=5)
     listbox_vars = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
@@ -569,7 +571,7 @@ def apply_bayesian_methods(dataframe, columns):
         listbox_vars.insert(tk.END, col)
     listbox_vars.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-    # Selectarea coloanei de clasă pentru metode bayesiene
+    
     label_class = ttk.Label(main_frame, text="Selectează coloana de clasă:")
     label_class.pack(padx=10, pady=5)
     class_var = ttk.Combobox(main_frame, values=columns, state="readonly")
@@ -618,7 +620,7 @@ def apply_bayesian_methods(dataframe, columns):
         results_frame = ttk.Frame(results_win, padding="3 3 12 12")
         results_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Configurarea TreeView pentru a afișa mai multe informații
+        
         tree_columns = ["Metrică", "Valoare"]
         tree = ttk.Treeview(results_frame, columns=tree_columns, show="headings")
         for col in tree_columns:
@@ -626,7 +628,7 @@ def apply_bayesian_methods(dataframe, columns):
             tree.column(col, anchor="center", width=150)
         tree.pack(padx=10, pady=10, expand=True)
 
-        # Introducerea datelor în TreeView
+        
         tree.insert("", "end", values=("Acuratețea clasificării", f"{bayesian_results['accuracy']:.2f}"))
         tree.insert("", "end", values=("Precizia", f"{bayesian_results['precision']:.2f}"))
         tree.insert("", "end", values=("Rata de reamintire", f"{bayesian_results['recall']:.2f}"))
@@ -650,15 +652,12 @@ def apply_frequency_distribution(dataframe, columns):
     root = tk.Toplevel()
     root.title("Distribuția Frecvenței")
 
-    # Crearea unui canvas pentru scroll
     main_canvas = tk.Canvas(root)
     main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # Adăugarea scrollbarului vertical
     main_scrollbar = ttk.Scrollbar(root, orient="vertical", command=main_canvas.yview)
     main_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # Crearea unui frame în interiorul canvas-ului
     main_frame = ttk.Frame(main_canvas)
     main_frame.bind(
         "<Configure>",
@@ -715,19 +714,15 @@ def apply_frequency_distribution(dataframe, columns):
             label = ttk.Label(main_frame, text=f"Distribuția frecvenței pentru {col}:")
             label.pack()
 
-            # Frame pentru Treeview și scrollbar
             frame = ttk.Frame(main_frame)
             frame.pack(fill=tk.BOTH, expand=True)
 
-            # Crearea unui canvas pentru scroll
             canvas = tk.Canvas(frame)
             canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-            # Adăugarea scrollbarului vertical
             scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-            # Crearea unui frame în interiorul canvas-ului
             scrollable_frame = ttk.Frame(canvas)
             scrollable_frame.bind(
                 "<Configure>",
@@ -812,19 +807,19 @@ def apply_contingency_table(dataframe, columns):
         label = ttk.Label(main_frame, text=f"Tabel de contingență pentru {selected_columns[0]} și {selected_columns[1]}:")
         label.pack()
 
-        # Frame pentru Treeview și scrollbar
+        
         frame = ttk.Frame(main_frame)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        # Crearea unui canvas pentru scroll
+        
         canvas = tk.Canvas(frame)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Adăugarea scrollbarului vertical
+        
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Crearea unui frame în interiorul canvas-ului
+        
         scrollable_frame = ttk.Frame(canvas)
         scrollable_frame.bind(
             "<Configure>",
@@ -853,15 +848,15 @@ def apply_chi_square_test(dataframe, columns):
     root = tk.Toplevel()
     root.title("Testul Chi-pătrat")
 
-    # Crearea unui canvas pentru scroll
+    
     main_canvas = tk.Canvas(root)
     main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # Adăugarea scrollbarului vertical
+    
     main_scrollbar = ttk.Scrollbar(root, orient="vertical", command=main_canvas.yview)
     main_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # Crearea unui frame în interiorul canvas-ului
+    
     main_frame = ttk.Frame(main_canvas)
     main_frame.bind(
         "<Configure>",
@@ -930,7 +925,7 @@ def apply_chi_square_test(dataframe, columns):
         label = ttk.Label(main_frame, text=f"Testul Chi-pătrat pentru {selected_columns[0]} și {selected_columns[1]}:")
         label.pack()
 
-        # Afișarea rezultatelor testului Chi-pătrat
+        
         results_frame = ttk.Frame(main_frame)
         results_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -941,7 +936,7 @@ def apply_chi_square_test(dataframe, columns):
         dof_label = ttk.Label(results_frame, text=f"Degrees of Freedom: {chi_square_results['dof']}")
         dof_label.pack(pady=5)
 
-        # Afișarea tabelului de contingență observat și așteptat
+        
         obs_label = ttk.Label(results_frame, text="Tabelul de contingență observat:")
         obs_label.pack()
         create_treeview(results_frame, chi_square_results['contingency_table'], "Observat")
@@ -951,11 +946,11 @@ def apply_chi_square_test(dataframe, columns):
         expected_df = pd.DataFrame(chi_square_results['expected'], index=chi_square_results['contingency_table'].index, columns=chi_square_results['contingency_table'].columns)
         create_treeview(results_frame, expected_df, "Așteptat")
 
-        # Text widget pentru răspunsul ChatGPT
+        
         response_text = tk.Text(main_frame, height=10)
         response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Buton pentru a trimite datele către ChatGPT
+        
         analyze_button = ttk.Button(main_frame, text="Analizează cu ChatGPT", command=lambda: request_analysis(response_text, chi_square_results, generate_chi_square_prompt))
         analyze_button.pack(pady=10)
 
@@ -1010,18 +1005,18 @@ def apply_association_analysis(dataframe, columns):
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Crearea unui canvas pentru scroll
+    
     main_canvas = tk.Canvas(main_frame)
     main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # Adăugarea scrollbarului vertical și orizontal
+    
     vsb = ttk.Scrollbar(main_frame, orient="vertical", command=main_canvas.yview)
     vsb.pack(side=tk.RIGHT, fill=tk.Y)
     hsb = ttk.Scrollbar(main_frame, orient="horizontal", command=main_canvas.xview)
     hsb.pack(side=tk.BOTTOM, fill=tk.X)
     main_canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
 
-    # Crearea unui frame în interiorul canvas-ului
+    
     scrollable_frame = ttk.Frame(main_canvas)
     scrollable_frame.bind(
         "<Configure>",
@@ -1066,7 +1061,7 @@ def apply_association_analysis(dataframe, columns):
             messagebox.showerror("Eroare", str(e))
 
     def perform_association_analysis(selected_columns, min_support, min_confidence):
-        df_selected = dataframe[selected_columns].astype(bool)  # Conversia coloanelor în tip bool
+        df_selected = dataframe[selected_columns].astype(bool)  
         frequent_itemsets = apriori(df_selected, min_support=min_support, use_colnames=True)
         rules = association_rules(frequent_itemsets, metric="confidence", min_threshold=min_confidence)
         return rules
@@ -1090,35 +1085,39 @@ def apply_association_analysis(dataframe, columns):
             values = [', '.join(list(row['antecedents'])), ', '.join(list(row['consequents'])), row['support'], row['confidence'], row['lift']]
             tree.insert("", "end", values=values)
 
-        # Text widget pentru răspunsul ChatGPT
+        
         response_text = tk.Text(scrollable_frame, height=10)
         response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Buton pentru a trimite datele către ChatGPT
+        
         analyze_button = ttk.Button(scrollable_frame, text="Analizează cu ChatGPT", command=lambda: request_analysis(response_text, rules, generate_association_message))
         analyze_button.pack(pady=10)
 
     root.mainloop()
 
 def apply_sentiment_analysis(dataframe, columns):
+    def generate_sentiment_message(sentiment_results):
+        prompt = "Here are the sentiment analysis results, please analyze:\n\n"
+        for _, row in sentiment_results.iterrows():
+            prompt += f"Text: {row['Text']}\n"
+            prompt += f"Negative: {row['Negative']}, Neutral: {row['Neutral']}, Positive: {row['Positive']}, Compound: {row['Compound']}\n\n"
+        return prompt
+    
     root = tk.Toplevel()
     root.title("Analiza Sentimentelor")
 
     main_frame = ttk.Frame(root, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Crearea unui canvas pentru scroll
     main_canvas = tk.Canvas(main_frame)
     main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # Adăugarea scrollbarului vertical și orizontal
     vsb = ttk.Scrollbar(main_frame, orient="vertical", command=main_canvas.yview)
     vsb.pack(side=tk.RIGHT, fill=tk.Y)
     hsb = ttk.Scrollbar(main_frame, orient="horizontal", command=main_canvas.xview)
     hsb.pack(side=tk.BOTTOM, fill=tk.X)
     main_canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
 
-    # Crearea unui frame în interiorul canvas-ului
     scrollable_frame = ttk.Frame(main_canvas)
     scrollable_frame.bind(
         "<Configure>",
@@ -1186,19 +1185,13 @@ def apply_sentiment_analysis(dataframe, columns):
             values = [row[col] for col in tree_columns]
             tree.insert("", "end", values=values)
 
-        # Text widget pentru răspunsul ChatGPT
+        
         response_text = tk.Text(scrollable_frame, height=10)
         response_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Buton pentru a trimite datele către ChatGPT
+        
         analyze_button = ttk.Button(scrollable_frame, text="Analizează cu ChatGPT", command=lambda: request_analysis(response_text, sentiment_results, generate_sentiment_message))
         analyze_button.pack(pady=10)
 
     root.mainloop()
 
-def generate_sentiment_message(sentiment_results):
-    prompt = "Here are the sentiment analysis results, please analyze:\n\n"
-    for _, row in sentiment_results.iterrows():
-        prompt += f"Text: {row['Text']}\n"
-        prompt += f"Negative: {row['Negative']}, Neutral: {row['Neutral']}, Positive: {row['Positive']}, Compound: {row['Compound']}\n\n"
-    return prompt

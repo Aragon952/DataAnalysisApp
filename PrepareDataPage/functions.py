@@ -7,37 +7,36 @@ from fancyimpute import IterativeImputer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from scipy.stats import zscore
 
-# Metode apelate in functions
+
 
 def update_treeview(dataframe, tree_frame):
-    # Îndepărtăm orice widgets existente din tree_frame
     for widget in tree_frame.winfo_children():
         widget.destroy()
-
-    # Creăm un nou Treeview în tree_frame
     main_tree = ttk.Treeview(tree_frame, columns=dataframe.columns.tolist(), show="headings")
 
-    # Setăm antetele și lățimea coloanelor
     for col in dataframe.columns:
         main_tree.heading(col, text=col)
         main_tree.column(col, width=100)
 
-    # Adăugăm un scrollbar vertical
     vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=main_tree.yview)
     vsb.pack(side='right', fill='y')
     main_tree.configure(yscrollcommand=vsb.set)
 
-    # Adăugăm un scrollbar orizontal
     hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=main_tree.xview)
     hsb.pack(side='bottom', fill='x')
     main_tree.configure(xscrollcommand=hsb.set)
 
-    # Adăugăm datele
     for index, row in dataframe.iterrows():
         main_tree.insert("", tk.END, values=list(row))
 
-    # Ambalăm main_tree în tree_frame
     main_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+def update_listboxes(dataframe, num_listbox, alpha_listbox):
+    num_listbox.delete(0, tk.END)
+    alpha_listbox.delete(0, tk.END)
+    for col in dataframe.columns:
+        num_listbox.insert(tk.END, col)
+        alpha_listbox.insert(tk.END, col)
 
 def save_file_info_to_database(user_id, filename, filepath):
     conn = sqlite3.connect('DataAnalysisApp/database.db')
@@ -50,36 +49,31 @@ def save_file_info_to_database(user_id, filename, filepath):
     conn.close()
 
 def get_value_from_user(prompt):
-    # Creează un dialog Toplevel
+    
     dialog_root = tk.Toplevel()
     dialog_root.title("Input")
 
-    # Adaugă un Entry widget pentru a permite utilizatorului să introducă o valoare
+    
     entry = tk.Entry(dialog_root)
     entry.pack(padx=20, pady=20)
 
-    # Funcția care va fi apelată la apăsarea butonului OK
+    
     def on_ok():
-        user_value = entry.get()  # Extrage valoarea introdusă de utilizator
-        dialog_root.user_value = user_value  # Stochează valoarea într-un atribut al fereastrei
-        dialog_root.destroy()  # Închide fereastra după ce valoarea a fost preluată
+        user_value = entry.get()  
+        dialog_root.user_value = user_value  
+        dialog_root.destroy()  
 
-    # Adaugă butoane pentru confirmare
+    
     ok_button = tk.Button(dialog_root, text="OK", command=on_ok)
     ok_button.pack(pady=10)
 
-    # Rulează loop-ul principal al dialogului
+    
     dialog_root.mainloop()
 
-    # Returnează valoarea introdusă de utilizator după închiderea ferestrei
+    
     return dialog_root.user_value if hasattr(dialog_root, 'user_value') else None
 
-def update_listboxes(dataframe, num_listbox, alpha_listbox):
-    num_listbox.delete(0, tk.END)
-    alpha_listbox.delete(0, tk.END)
-    for col in dataframe.columns:
-        num_listbox.insert(tk.END, col)
-        alpha_listbox.insert(tk.END, col)
+
 
 def detect_outliers_percentile(column_data, threshold):
     lower_limit = column_data.quantile(threshold / 100.0)
@@ -90,12 +84,12 @@ def detect_outliers_zscore(column_data, z_threshold):
     zs = zscore(column_data)
     return (abs(zs) > z_threshold)
 
-# Metode pentru toate coloanele
+
 
 def select_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     top = tk.Toplevel()
     top.title("Select Columns")
-    top.grab_set()  # Asigură că inputul este capturat de această fereastră
+    top.grab_set()  
 
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
@@ -105,11 +99,11 @@ def select_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     listbox_available = tk.Listbox(main_frame, selectmode=tk.MULTIPLE)
     listbox_available.grid(row=1, column=0, padx=10, pady=10, sticky="ns")
 
-    # Încărcăm coloanele disponibile în listbox
+    
     for col in dataframe_container['dataframe'].columns:
         listbox_available.insert(tk.END, col)
 
-    # Funcție pentru butonul de selectare
+    
     def keep_selected_columns():
         selected_indices = listbox_available.curselection()
         selected_columns = [listbox_available.get(i) for i in selected_indices]
@@ -120,12 +114,12 @@ def select_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
             dataframe_container['dataframe'] = new_dataframe
             update_treeview(dataframe_container['dataframe'], tree_frame)
             update_listboxes(dataframe_container['dataframe'], num_listbox, alpha_listbox)
-            messagebox.showinfo("Success", "Columns selected successfully.", parent=top)
+            messagebox.showinfo("Success", "Coloanele au fost selectate cu succes.", parent=top)
             top.destroy()
         else:
-            messagebox.showwarning("No selection", "No columns selected to keep.", parent=top)
+            messagebox.showwarning("Selectia nu s-a realizat", parent=top)
 
-    # Buton pentru păstrarea coloanelor selectate
+    
     select_button = ttk.Button(main_frame, text="Keep Selected Columns", command=keep_selected_columns)
     select_button.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
 
@@ -135,7 +129,7 @@ def select_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
 def remove_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     top = tk.Toplevel()
     top.title("Remove Columns")
-    top.grab_set()  # Asigură că inputul este capturat de această fereastră
+    top.grab_set()  
 
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
@@ -145,11 +139,11 @@ def remove_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     listbox_available = tk.Listbox(main_frame, selectmode=tk.MULTIPLE)
     listbox_available.grid(row=1, column=0, padx=10, pady=10, sticky="ns")
 
-    # Încărcăm coloanele disponibile în listbox
+    
     for col in dataframe_container['dataframe'].columns:
         listbox_available.insert(tk.END, col)
 
-    # Funcție pentru butonul de eliminare
+    
     def remove_selected_columns():
         selected_indices = listbox_available.curselection()
         selected_columns = [listbox_available.get(i) for i in selected_indices]
@@ -165,7 +159,7 @@ def remove_columns(dataframe_container, tree_frame, num_listbox, alpha_listbox):
         else:
             messagebox.showwarning("No selection", "No columns selected for removal.", parent=top)
 
-    # Buton pentru eliminarea coloanelor selectate
+    
     remove_button = ttk.Button(main_frame, text="Remove Selected Columns", command=remove_selected_columns)
     remove_button.grid(row=2, column=0, padx=10, pady=10, sticky='ew')
 
@@ -182,7 +176,7 @@ def replace_value(dataframe_container, tree_frame):
         for column in selected_columns:
             if column in dataframe.columns:
                 try:
-                    # Determină tipul coloanei și încearcă să convertești valorile
+                    
                     col_type = dataframe[column].dtype
                     if pd.api.types.is_numeric_dtype(col_type):
                         old_value_converted = float(old_value) if '.' in old_value else int(old_value)
@@ -216,12 +210,12 @@ def replace_value(dataframe_container, tree_frame):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Entry for old value
+    
     old_value_entry = tk.Entry(main_frame, width=20)
     old_value_entry.pack(pady=10)
     old_value_entry.insert(0, "Old value")
 
-    # Entry for new value
+    
     new_value_entry = tk.Entry(main_frame, width=20)
     new_value_entry.pack(pady=10)
     new_value_entry.insert(0, "New value")
@@ -241,7 +235,7 @@ def rename_column(dataframe_container, tree_frame, num_listbox, alpha_listbox):
             messagebox.showerror("Error", "No new name entered. Please enter a new name for the selected column.")
             return
 
-        old_name = selected_column[0]  # Take the first (and should be only) selected item
+        old_name = selected_column[0]  
         dataframe = dataframe_container['dataframe']
         dataframe.rename(columns={old_name: new_name}, inplace=True)
         
@@ -257,7 +251,7 @@ def rename_column(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Listbox for all columns
+    
     listbox = tk.Listbox(main_frame, selectmode='single', exportselection=0, height=10)
     for col in dataframe_container['dataframe'].columns:
         listbox.insert(tk.END, col)
@@ -267,18 +261,18 @@ def rename_column(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Entry for new column name
+    
     new_name_entry = tk.Entry(main_frame, width=20)
     new_name_entry.pack(pady=10)
 
-    # Button to apply the rename
+    
     rename_button = ttk.Button(main_frame, text="Save Changes", command=lambda: apply_rename(
         [listbox.get(i) for i in listbox.curselection()], new_name_entry.get()))
     rename_button.pack(pady=10)
 
     top.mainloop()
 
-# Metode pentru coloanele numerice
+
     
 def group_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listbox):
     top = tk.Toplevel()
@@ -290,7 +284,7 @@ def group_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listb
     top.columnconfigure(0, weight=1)
     top.rowconfigure(0, weight=1)
 
-    # Opțiuni pentru selectarea coloanelor
+    
     tk.Label(main_frame, text="Select first column:").grid(row=0, column=0, padx=10, pady=5)
     column1_combobox = ttk.Combobox(main_frame, values=list(dataframe_container['dataframe'].columns))
     column1_combobox.grid(row=0, column=1, padx=10, pady=5)
@@ -299,18 +293,18 @@ def group_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listb
     column2_combobox = ttk.Combobox(main_frame, values=list(dataframe_container['dataframe'].columns))
     column2_combobox.grid(row=1, column=1, padx=10, pady=5)
 
-    # Opțiuni pentru operații
+    
     operations = {"Add": "+", "Subtract": "-", "Multiply": "*", "Divide": "/"}
     tk.Label(main_frame, text="Select operation:").grid(row=2, column=0, padx=10, pady=5)
     operation_combobox = ttk.Combobox(main_frame, values=list(operations.keys()))
     operation_combobox.grid(row=2, column=1, padx=10, pady=5)
 
-    # Opțiune pentru denumirea noii coloane
+    
     tk.Label(main_frame, text="Enter new column name (optional):").grid(row=3, column=0, padx=10, pady=5)
     new_column_name_entry = ttk.Entry(main_frame)
     new_column_name_entry.grid(row=3, column=1, padx=10, pady=5)
 
-    # Funcție pentru aplicarea grupării
+    
     def apply_grouping():
         col1 = column1_combobox.get()
         col2 = column2_combobox.get()
@@ -333,7 +327,7 @@ def group_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listb
         update_listboxes(dataframe_container['dataframe'], num_listbox, alpha_listbox)
         top.destroy()
 
-    # Buton pentru aplicarea grupării
+    
     apply_button = ttk.Button(main_frame, text="Apply", command=apply_grouping)
     apply_button.grid(row=4, column=0, columnspan=2, pady=10)
 
@@ -342,7 +336,7 @@ def group_numeric_data(dataframe_container, tree_frame, num_listbox, alpha_listb
 def fill_numeric_nan_with_median(dataframe_container, tree_frame, columns):
     def apply_fill(selected_columns):
         if not selected_columns:
-            messagebox.showerror("Error", "No columns selected. Please select at least one column.")
+            messagebox.showerror("Eroare", "Nu exista coloane selectate. Te rog sa selectezi cel putin o coloana.")
             return
         
         dataframe = dataframe_container['dataframe']
@@ -353,7 +347,7 @@ def fill_numeric_nan_with_median(dataframe_container, tree_frame, columns):
 
         dataframe_container['dataframe'] = dataframe
         update_treeview(dataframe_container['dataframe'], tree_frame)
-        messagebox.showinfo("Success", "NaN values filled with median for selected columns.")
+        messagebox.showinfo("Succes", "Valorile NaN au fost completate cu mediana pentru coloanele selectate.")
         top.destroy()
 
     top = tk.Toplevel()
@@ -417,7 +411,7 @@ def fill_numeric_nan_with_specific_numeric_value(dataframe_container, tree_frame
     top = tk.Toplevel()
     top.title("Fill Missing Values with Specific Value")
 
-    # Setează fereastra să nu permită interacțiunea cu fereastra principală
+    
     top.grab_set()
 
     main_frame = ttk.Frame(top, padding="3 3 12 12")
@@ -483,20 +477,15 @@ def mice_imputation_numeric(dataframe_container, tree_frame, columns):
 
         dataframe = dataframe_container['dataframe']
         try:
-            # Select the data for the selected columns
             selected_data = dataframe[selected_columns]
             imputer = IterativeImputer()
             imputed_data = imputer.fit_transform(selected_data)
             imputed_df = pd.DataFrame(imputed_data, columns=selected_data.columns)
 
-            # Replace the selected columns in the original DataFrame with the imputed version
             for col in selected_columns:
                 dataframe[col] = imputed_df[col]
-
-            # Update the DataFrame in the container
             dataframe_container['dataframe'] = dataframe
 
-            # Update the UI
             update_treeview(dataframe_container['dataframe'], tree_frame)
             messagebox.showinfo("Imputation Complete", "Missing values have been imputed successfully.")
             top.destroy()
@@ -591,13 +580,13 @@ def normalize_numeric(dataframe_container, tree_frame, columns):
 def handle_outliers_numeric(dataframe_container, tree_frame, columns):
     top = tk.Toplevel()
     top.title("Handle Outliers")
-    top.grab_set()  # Ensure input is captured by this window
+    top.grab_set()  
 
     def apply_outlier_handling(selected_columns, method, action, threshold):
         dataframe = dataframe_container['dataframe']
 
         try:
-            threshold = float(threshold)  # Convert threshold to float
+            threshold = float(threshold)  
             for column in selected_columns:
                 if method == 'percentile':
                     outlier_mask = detect_outliers_percentile(dataframe[column], threshold)
@@ -655,7 +644,7 @@ def handle_outliers_numeric(dataframe_container, tree_frame, columns):
 
     top.mainloop()
 
-# Metode pentru coloanele alfanumerice
+
 
 def group_alphanumeric_data(dataframe_container, tree_frame, columns, num_listbox, alpha_listbox):
     top = tk.Toplevel()
@@ -665,7 +654,7 @@ def group_alphanumeric_data(dataframe_container, tree_frame, columns, num_listbo
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Selectarea coloanelor
+    
     tk.Label(main_frame, text="Select first column:").pack(padx=10, pady=5)
     column1_combobox = ttk.Combobox(main_frame, values=columns)
     column1_combobox.pack(padx=10, pady=5, fill='x')
@@ -674,17 +663,17 @@ def group_alphanumeric_data(dataframe_container, tree_frame, columns, num_listbo
     column2_combobox = ttk.Combobox(main_frame, values=columns)
     column2_combobox.pack(padx=10, pady=5, fill='x')
 
-    # Separator input
+    
     tk.Label(main_frame, text="Enter separator (optional):").pack(padx=10, pady=5)
     separator_entry = ttk.Entry(main_frame)
     separator_entry.pack(padx=10, pady=5, fill='x')
 
-    # New column name input
+    
     tk.Label(main_frame, text="Enter new column name (optional):").pack(padx=10, pady=5)
     new_column_name_entry = ttk.Entry(main_frame)
     new_column_name_entry.pack(padx=10, pady=5, fill='x')
 
-    # Funcția care aplică gruparea
+    
     def apply_grouping():
         col1 = column1_combobox.get()
         col2 = column2_combobox.get()
@@ -719,12 +708,12 @@ def fill_alphanumeric_nan_with_specific_value(dataframe_container, tree_frame, c
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Label și entry pentru valoarea specifică
+    
     tk.Label(main_frame, text="Enter the value to fill NaNs:").pack(padx=10, pady=5)
     value_entry = ttk.Entry(main_frame)
     value_entry.pack(padx=10, pady=5, fill='x')
 
-    # Listbox pentru selectarea coloanelor
+    
     tk.Label(main_frame, text="Select columns to fill NaNs:").pack(padx=10, pady=5)
     listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
     for col in columns:
@@ -735,12 +724,12 @@ def fill_alphanumeric_nan_with_specific_value(dataframe_container, tree_frame, c
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Funcția care aplică umplerea NaN-urilor
+    
     def apply_fill():
         value = value_entry.get()
         selected_columns = [listbox.get(i) for i in listbox.curselection()]
         if value and selected_columns:
-            dataframe = dataframe_container['dataframe'].copy()  # Faceți o copie a DataFrame-ului
+            dataframe = dataframe_container['dataframe'].copy()  
             for column in selected_columns:
                 dataframe.loc[:, column] = dataframe[column].fillna(value)
             dataframe_container['dataframe'] = dataframe
@@ -763,13 +752,13 @@ def string_slicing_alfanumeric(dataframe_container, tree_frame, columns):
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Opțiuni pentru selectarea metodei de slicing
-    method_var = tk.StringVar(value="range")  # Default slicing method
+    
+    method_var = tk.StringVar(value="range")  
     ttk.Radiobutton(main_frame, text="Slice by Range", variable=method_var, value="range").pack(anchor='w', padx=20)
     ttk.Radiobutton(main_frame, text="Slice from End", variable=method_var, value="from_end").pack(anchor='w', padx=20)
     ttk.Radiobutton(main_frame, text="Remove Substring", variable=method_var, value="remove_substring").pack(anchor='w', padx=20)
 
-    # Input pentru indicele de start și sfârșit
+    
     tk.Label(main_frame, text="Start index:").pack(padx=10, pady=5)
     start_entry = ttk.Entry(main_frame)
     start_entry.pack(padx=10, pady=5, fill='x')
@@ -778,12 +767,12 @@ def string_slicing_alfanumeric(dataframe_container, tree_frame, columns):
     end_entry = ttk.Entry(main_frame)
     end_entry.pack(padx=10, pady=5, fill='x')
 
-    # Entry pentru substring (pentru Remove Substring)
+    
     tk.Label(main_frame, text="Substring to remove (for remove substring):").pack(padx=10, pady=5)
     substring_entry = ttk.Entry(main_frame)
     substring_entry.pack(padx=10, pady=5, fill='x')
 
-    # Listbox pentru selectarea coloanelor
+    
     tk.Label(main_frame, text="Select columns to apply slicing:").pack(padx=10, pady=5)
     listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
     for col in columns:
@@ -794,7 +783,7 @@ def string_slicing_alfanumeric(dataframe_container, tree_frame, columns):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Funcția care aplică slicing-ul
+    
     def apply_slicing():
         method = method_var.get()
         start = start_entry.get()
@@ -831,7 +820,6 @@ def binary_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_li
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Listbox pentru selectarea coloanelor
     tk.Label(main_frame, text="Select columns to apply binary encoding:").pack(padx=10, pady=5)
     listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
     for col in columns:
@@ -842,7 +830,6 @@ def binary_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_li
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Funcția care aplică codificarea binară
     def apply_encoding():
         selected_columns = [listbox.get(i) for i in listbox.curselection()]
         if selected_columns:
@@ -851,7 +838,7 @@ def binary_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_li
                 for column in selected_columns:
                     dummies = pd.get_dummies(dataframe[column], prefix=column)
                     dataframe = pd.concat([dataframe, dummies], axis=1)
-                    dataframe.drop(column, axis=1, inplace=True)  # Eliminăm coloana originală
+                    dataframe.drop(column, axis=1, inplace=True)
                 
                 dataframe_container['dataframe'] = dataframe
                 update_treeview(dataframe_container['dataframe'], tree_frame)
@@ -876,7 +863,7 @@ def numeric_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_l
     main_frame = ttk.Frame(top, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Listbox pentru selectarea coloanelor
+    
     tk.Label(main_frame, text="Select columns to apply numeric encoding:").pack(padx=10, pady=5)
     listbox = tk.Listbox(main_frame, selectmode='multiple', exportselection=0, height=10)
     for col in columns:
@@ -887,7 +874,7 @@ def numeric_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_l
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     listbox.config(yscrollcommand=scrollbar.set)
 
-    # Funcția care aplică codificarea numerică
+    
     def apply_encoding():
         selected_columns = [listbox.get(i) for i in listbox.curselection()]
         if selected_columns:
@@ -911,12 +898,12 @@ def numeric_encoding_alfanumeric(dataframe_container, tree_frame, columns, num_l
 
     top.mainloop()
 
-# Alte metode apelate in front
+
 
 def save_csv(dataframe_container, user_id):
     dataframe = dataframe_container["dataframe"]
     dialog_root = tk.Toplevel()
-    dialog_root.withdraw()  # Hide the dialog main window
+    dialog_root.withdraw()  
 
     file_name = simpledialog.askstring("Input", "Enter the name for the CSV file:", parent=dialog_root)
     if file_name:

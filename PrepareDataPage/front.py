@@ -13,42 +13,36 @@ alfanumeric_methods = ['Selectare coloane', 'Eliminare coloane', 'Replace', 'Red
 def open_prepare_data_page(user_id, dataframe):
     dataframe_container = {"dataframe": dataframe}
 
-    prepare_window = tk.Tk()  # Create a new Tk instance instead of Toplevel
-    prepare_window.title("Preparare Date")
-    prepare_window.state("zoomed")
+    prepare_data_main_window = tk.Tk()
+    prepare_data_main_window.title("Preparare Date")
+    prepare_data_main_window.state("zoomed")
 
-    main_frame = ttk.Frame(prepare_window, padding="3 3 12 12")
+    main_frame = ttk.Frame(prepare_data_main_window, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     tree_frame = ttk.Frame(main_frame)
-    tree_frame.pack(fill=tk.BOTH, expand=True, pady=20, padx=20)  # Ensure padding to see the frame's extent
+    tree_frame.pack(fill=tk.BOTH, expand=True, pady=20, padx=20)
 
-    # TreeView setup
     main_tree = ttk.Treeview(tree_frame, columns=dataframe_container["dataframe"].columns.tolist(), show="headings")
     for col in dataframe_container["dataframe"].columns:
         main_tree.heading(col, text=col)
         main_tree.column(col, width=100)
     main_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-    # Vertical Scrollbar
     vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=main_tree.yview)
     vsb.pack(side=tk.RIGHT, fill=tk.Y)
     main_tree.configure(yscrollcommand=vsb.set)
 
-    # Horizontal Scrollbar
     hsb = ttk.Scrollbar(main_frame, orient="horizontal", command=main_tree.xview)
     hsb.pack(side=tk.BOTTOM, fill=tk.X)
     main_tree.configure(xscrollcommand=hsb.set)
 
-    # Ensure data is loaded into the TreeView
     for index, row in dataframe_container["dataframe"].iterrows():
         main_tree.insert("", tk.END, values=list(row))
 
-    # Listbox Frame for numeric and alphanumeric columns
     list_frame = ttk.Frame(main_frame)
     list_frame.pack(fill=tk.X, expand=False, side=tk.TOP, pady=10)
 
-    # Numeric columns setup
     ttk.Label(list_frame, text="Coloane numerice").pack(side=tk.LEFT, padx=10)
     num_listbox = tk.Listbox(list_frame, height=5)
     num_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
@@ -94,7 +88,6 @@ def open_prepare_data_page(user_id, dataframe):
 
     num_methods.bind('<<ComboboxSelected>>', handle_numeric_all_method_selection)
 
-    # Alphanumeric columns setup
     ttk.Label(list_frame, text="Coloane alfanumerice").pack(side=tk.LEFT, padx=10)
     alpha_listbox = tk.Listbox(list_frame, height=5)
     alpha_listbox.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X, expand=True)
@@ -134,20 +127,18 @@ def open_prepare_data_page(user_id, dataframe):
 
     alpha_methods.bind('<<ComboboxSelected>>', handle_alphanumeric_all_method_selection)
 
-    # Populate listboxes
     for col in dataframe_container["dataframe"].select_dtypes(include='number').columns:
         num_listbox.insert(tk.END, col)
     for col in dataframe_container["dataframe"].select_dtypes(exclude='number').columns:
         alpha_listbox.insert(tk.END, col)
 
-
-    # Analyze button
-    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda:[prepare_window.destroy(), open_analyze_data_page(user_id, dataframe_container["dataframe"])])
+    execute_button = ttk.Button(main_frame, text="Analizeaza datele", command=lambda:[prepare_data_main_window.destroy(), open_analyze_data_page(user_id, dataframe_container["dataframe"])])
     execute_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
-    # Save data button
     save_button = ttk.Button(main_frame, text="Salvează datele", command=lambda: save_csv(dataframe_container, user_id))
     save_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
+    front_page_button = ttk.Button(main_frame, text="Pagina principala", command=lambda: [prepare_data_main_window.destroy()])
+    front_page_button.pack(padx=10, pady=10, fill=tk.X, expand=False)
 
-    prepare_window.mainloop()
+    prepare_data_main_window.mainloop()

@@ -10,14 +10,13 @@ alfanumeric_methods = ['Frecventa si distributie', 'Tabel de Contingenta', 'Test
 
 
 def open_analyze_data_page(user_id, dataframe):
-    analyze_window = tk.Tk()
-    analyze_window.title("Analiza Datelor")
-    analyze_window.state("zoomed")
+    analyze_data_main_window = tk.Tk()
+    analyze_data_main_window.title("Analiza Datelor")
+    analyze_data_main_window.state("zoomed")
 
-    main_frame = ttk.Frame(analyze_window, padding="3 3 12 12")
+    main_frame = ttk.Frame(analyze_data_main_window, padding="3 3 12 12")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Frame for TreeView and Scrollbars
     tree_frame = ttk.Frame(main_frame, height=200)
     tree_frame.pack(fill=tk.BOTH, expand=True, pady=20, padx=20)
 
@@ -38,7 +37,6 @@ def open_analyze_data_page(user_id, dataframe):
     for index, row in dataframe.iterrows():
         tree.insert("", tk.END, values=list(row))
 
-    # Setup listboxes and entry for column selection and method application
     list_frame = ttk.Frame(main_frame)
     list_frame.pack(fill=tk.X, expand=False, side=tk.TOP, pady=10)
 
@@ -51,7 +49,7 @@ def open_analyze_data_page(user_id, dataframe):
     def handle_numeric_methods(event):
         selected_method = num_methods.get()
         if selected_method == 'Statistici descriptive':
-            apply_descriptive_statistics(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
+            apply_descriptive_statistics(dataframe, dataframe.select_dtypes(include='number').columns.tolist(), user_id)
         elif selected_method == 'Regresie Liniara':
             apply_linear_regression(dataframe, dataframe.select_dtypes(include='number').columns.tolist())
         elif selected_method == 'Regresie Logistica':
@@ -101,11 +99,16 @@ def open_analyze_data_page(user_id, dataframe):
     for col in dataframe.select_dtypes(exclude='number').columns:
         alpha_listbox.insert(tk.END, col)
 
-        # Bottom control buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
     save_button = ttk.Button(button_frame, text="Salvează datele", command=lambda: save_csv(dataframe, user_id))
     save_button.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
 
-    analyze_window.mainloop()
+    front_page_button = ttk.Button(button_frame, text="Pagina principala")
+    front_page_button.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
+
+    preprocessing_button = ttk.Button(button_frame, text="Preprocesare date")
+    preprocessing_button.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
+
+    analyze_data_main_window.mainloop()
