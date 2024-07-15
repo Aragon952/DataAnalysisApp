@@ -9,7 +9,7 @@ def setup_gui():
     connect_page_main_window = tk.Tk()
     connect_page_main_window.title("Connect Page")
     connect_page_front_height = 200
-    connect_page_front_width = 275
+    connect_page_front_width = 250
     center_window(connect_page_main_window, connect_page_front_width, connect_page_front_height)
     connect_page_main_window.configure(bg="lightblue")
     connect_page_main_window.resizable(False, False)

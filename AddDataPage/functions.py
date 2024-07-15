@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 import pandas as pd
 import os
 import sqlite3
@@ -38,27 +38,52 @@ def load_file(data_container, tree, file_type):
         # Update the treeview with the new dataframe
         update_treeview(data_container["dataframe"], tree)
 
-def save_csv(dataframe, file_name, user_id):
-    if dataframe.empty:
-        messagebox.showwarning("Atenție", "Nu există date de salvat.")
-        return
-    if not file_name:
-        messagebox.showwarning("Atenție", "Nu a fost încărcat niciun fișier.")
-        return
-    folder_path = os.path.join("C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults", str(user_id),"DataSets")
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    filepath = os.path.join(folder_path, file_name)
-    dataframe.to_csv(filepath, index=False)
-    save_file_info_to_database(user_id, file_name, filepath)
-    messagebox.showinfo("Succes", "Setul de date a fost salvat cu succes în " + filepath)
+def get_value_from_user(prompt):
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+
+    user_value = simpledialog.askstring("Input", prompt, parent=root)
+
+    root.destroy()  # Destroy the hidden main window
+
+    return user_value
 
 def save_file_info_to_database(user_id, filename, filepath):
     conn = sqlite3.connect('DataAnalysisApp/database.db')
     cur = conn.cursor()
-    cur.execute('''
-        INSERT INTO user_history (user_id, file_history, file_name)
-        VALUES (?, ?, ?)
-    ''', (user_id, filepath, filename))
-    conn.commit()
-    conn.close()
+    try:
+        cur.execute('''
+            INSERT INTO user_history (user_informationid, file_path, file_name)
+            VALUES (?, ?, ?)
+        ''', (user_id, filepath, filename))
+        conn.commit()
+        messagebox.showinfo("Success", "File info saved successfully to database.")
+    except sqlite3.Error as e:
+        messagebox.showerror("Database Error", f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+def save_csv(dataframe, user_id):
+    if dataframe.empty:
+        messagebox.showwarning("Warning", "There is no data to save.")
+        return
+
+    file_name = get_value_from_user("Enter the name for the CSV file:")
+    if file_name:
+        if not file_name.endswith(".csv"):
+            file_name += ".csv"
+
+        directory = f"C:\\Users\\user\\Desktop\\Licenta\\GitApp\\DataAndResults\\{user_id}\\DataSets"
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        file_path = os.path.join(directory, file_name)
+
+        dataframe.to_csv(file_path, index=False)
+
+        save_file_info_to_database(user_id, file_name, file_path)
+
+        messagebox.showinfo("Success", f"The dataset was successfully saved to {file_path}")
+    else:
+        messagebox.showwarning("Warning", "Filename was not provided. Data was not saved.")
