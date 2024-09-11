@@ -26,7 +26,7 @@ try:
 except LookupError:
     nltk.download('vader_lexicon')
 
-api_key = "sk-proj-PBFLHil6BVfWS860yS27T3BlbkFJsp0W4Nt469C3EAMg9nqY"
+api_key = "Insert your API key"
 openai.api_key = api_key
 
 def get_value_from_user(prompt):
