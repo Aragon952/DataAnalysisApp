@@ -38,5 +38,3 @@ def setup_gui():
     connect_page_main_window.mainloop()
 
 setup_gui()
-
-
